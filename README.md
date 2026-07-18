@@ -107,6 +107,22 @@ Añádelas a mano en cada máquina:
   }
   ```
 
+- **SSH sin anidar Zellij** — si el host local y el remoto corren Zellij, entrar por `ssh`
+  desde dentro de Zellij local **anida** (dos barras), porque `$ZELLIJ` no se reenvía. Setup
+  "el remoto gana" (persistencia remota): (1) el auto-start local respeta `NO_ZELLIJ`
+  (`[[ -z "$ZELLIJ" && -z "$NO_ZELLIJ" ]]`); (2) función `zssh` que lanza el ssh en una
+  ventana Ghostty NUEVA sin Zellij local, así el Zellij del remoto es el workspace sin anidar:
+  ```sh
+  zssh() {
+    if command -v ghostty >/dev/null 2>&1; then
+      ghostty -e ssh "$@" >/dev/null 2>&1 & disown   # Linux / ghostty en PATH
+    else
+      open -na Ghostty --args -e ssh "$@"            # macOS (app bundle)
+    fi
+  }
+  ```
+  Uso: `zssh mmja`. Para un shell local plano manual: abre el terminal con `NO_ZELLIJ=1`.
+
 - **Ghostty `Shift+Enter`** — en `~/.config/ghostty/config`:
   ```ini
   keybind = shift+enter=text:\x1b\r
