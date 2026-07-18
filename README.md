@@ -57,6 +57,10 @@ Alt-space     command palette              Alt-/   which-key (cheatsheet)
 ```
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
 
+**Funciones de shell** (`shell/functions.sh`, sourced automáticamente por `bootstrap.sh`):
+`zjcwd` (crea/salta a una sesión en el directorio actual) · `zjssh <host>` (ssh a un host con
+su propio Zellij, en ventana nueva, sin anidar).
+
 ## Dependencias
 
 `zellij` (0.44+), `curl`, `sed`, `cksum`, `hostname`, `zsh`. En macOS via Homebrew;
@@ -93,35 +97,12 @@ Añádelas a mano en cada máquina:
   `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"`. Hay que ponerlo en cada host al que entres
   por SSH. Ojo seguridad: root en el host puede usar tu agente mientras estás conectado.
 
-- **Función `zjcwd`** — en `~/.config/sh/rc.sh`, crea/salta a una sesión en el directorio
-  actual SIN anidar (`zellij -s` anida estando dentro de Zellij):
-  ```sh
-  zjcwd() {
-    local name="${PWD##*/}"; name="${name//./_}"
-    if [ -n "$ZELLIJ" ]; then
-      zellij pipe --plugin "file:$HOME/.config/zellij/plugins/zellij-switch.wasm" \
-        -- "--session $name --cwd $PWD --layout dev"
-    else
-      zellij -s "$name" -n dev
-    fi
-  }
-  ```
-
 - **SSH sin anidar Zellij** — si el host local y el remoto corren Zellij, entrar por `ssh`
   desde dentro de Zellij local **anida** (dos barras), porque `$ZELLIJ` no se reenvía. Setup
-  "el remoto gana" (persistencia remota): (1) el auto-start local respeta `NO_ZELLIJ`
-  (`[[ -z "$ZELLIJ" && -z "$NO_ZELLIJ" ]]`); (2) función `zssh` que lanza el ssh en una
-  ventana Ghostty NUEVA sin Zellij local, así el Zellij del remoto es el workspace sin anidar:
-  ```sh
-  zssh() {
-    if command -v ghostty >/dev/null 2>&1; then
-      ghostty -e ssh "$@" >/dev/null 2>&1 & disown   # Linux / ghostty en PATH
-    else
-      open -na Ghostty --args -e ssh "$@"            # macOS (app bundle)
-    fi
-  }
-  ```
-  Uso: `zssh mmja`. Para un shell local plano manual: abre el terminal con `NO_ZELLIJ=1`.
+  "el remoto gana" (persistencia remota): el auto-start local respeta **`NO_ZELLIJ`** — añade
+  `&& [[ -z "$NO_ZELLIJ" ]]` a su guard. Luego usa **`zjssh <host>`** (función auto-sourced,
+  ver arriba), que lanza el ssh en una ventana Ghostty nueva sin Zellij local → el Zellij del
+  remoto es el workspace, sin anidar. Shell local plano manual: `NO_ZELLIJ=1` al abrir el terminal.
 
 - **Ghostty `Shift+Enter`** — en `~/.config/ghostty/config`:
   ```ini

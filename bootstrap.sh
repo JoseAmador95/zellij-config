@@ -66,7 +66,21 @@ mkdir -p "$CACHE"
 cp permissions.kdl "$CACHE/permissions.kdl"
 info "permisos sembrados → $CACHE/permissions.kdl"
 
-# --- 5) dependencias (aviso, no aborta) --------------------------------------
+# --- 5) sourcear las funciones de shell (zjcwd, zjssh) en el rc (idempotente) --
+RC="$HOME/.zshrc"
+if [ -f "$HOME/.config/sh/rc.sh" ]; then RC="$HOME/.config/sh/rc.sh"; fi
+if grep -qF '# >>> zj-functions >>>' "$RC" 2>/dev/null; then
+  info "funciones de shell ya sourced en $RC"
+else
+  {
+    printf '\n# >>> zj-functions >>>  (añadido por bootstrap.sh de Zellij)\n'
+    printf 'source "$HOME/.config/zellij/shell/functions.sh"\n'
+    printf '# <<< zj-functions <<<\n'
+  } >> "$RC"
+  info "source de funciones añadido a $RC"
+fi
+
+# --- 6) dependencias (aviso, no aborta) --------------------------------------
 for dep in zellij curl cksum hostname sed; do
   command -v "$dep" >/dev/null 2>&1 || warn "falta '$dep' en PATH"
 done
