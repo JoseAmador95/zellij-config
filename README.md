@@ -75,6 +75,23 @@ Añádelas a mano en cada máquina:
   salir de Zellij. En macOS, si Brew no está en PATH para shells no-interactivos, mete
   `eval "$(/opt/homebrew/bin/brew shellenv)"` en `~/.zshenv`.
 
+- **SSH agent forwarding estable** — si entras con `ssh -A` a un host que corre Zellij, el
+  socket del agente forwardeado cambia en cada conexión y Zellij persiste los paneles con el
+  socket viejo (muerto) → "no hay llaves". Fíjalo a una ruta estable en `~/.config/sh/rc.sh`,
+  **antes** del auto-start de arriba:
+  ```sh
+  if [ -n "$SSH_CONNECTION" ]; then
+    if [ -S "$SSH_AUTH_SOCK" ] && [ "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent.sock" ]; then
+      ln -sf "$SSH_AUTH_SOCK" "$HOME/.ssh/agent.sock"
+    fi
+    [ -S "$HOME/.ssh/agent.sock" ] && export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
+  fi
+  ```
+  El symlink `~/.ssh/agent.sock` se re-apunta en cada login → los paneles (que guardan esa
+  ruta fija) se auto-curan al reconectar. Paneles ya abiertos: una vez
+  `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"`. Hay que ponerlo en cada host al que entres
+  por SSH. Ojo seguridad: root en el host puede usar tu agente mientras estás conectado.
+
 - **Ghostty `Shift+Enter`** — en `~/.config/ghostty/config`:
   ```ini
   keybind = shift+enter=text:\x1b\r
