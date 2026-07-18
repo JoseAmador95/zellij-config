@@ -1,0 +1,59 @@
+// ════════════════════════════════════════════════════════════════════════
+//  Layout "dev" — tabs para Claude, editor, git y terminal libre.
+//  Uso:  zellij -s <proyecto> -n dev
+//
+//  Barra igual que "main": zjstatus arriba (sin "zellij"/sesión),
+//  sin status-bar fijo. Zellij no tiene import entre layouts, así que el
+//  default_tab_template está duplicado a propósito: si cambias la barra en
+//  main.kdl, replica el mismo bloque aquí para mantenerlos iguales.
+// ════════════════════════════════════════════════════════════════════════
+
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="file:__HOME__/.config/zellij/plugins/zjstatus.wasm" {
+                format_left  "{mode} {command_host} {command_session} {tabs}"
+                format_right ""
+                format_space ""
+
+                // hostname — pastilla con color/emoji determinista por hostname
+                command_host_command    "sh __HOME__/.config/zellij/scripts/hostname-color.sh"
+                command_host_format     "{stdout}"
+                command_host_interval   "10"
+                command_host_rendermode "dynamic"
+
+                // nombre de sesión — pastilla con color/emoji determinista por sesión
+                command_session_command    "sh __HOME__/.config/zellij/scripts/session-color.sh"
+                command_session_format     "{stdout}"
+                command_session_interval   "10"
+                command_session_rendermode "dynamic"
+
+                mode_normal  "#[bg=#007ACC,fg=#FFFFFF,bold] NORMAL "
+                mode_locked  "#[bg=#E8E8E8,fg=#343434,bold] LOCKED "
+                mode_pane    "#[bg=#007ACC,fg=#FFFFFF,bold] PANE "
+                mode_tab     "#[bg=#007ACC,fg=#FFFFFF,bold] TAB "
+                mode_resize  "#[bg=#007ACC,fg=#FFFFFF,bold] RESIZE "
+                mode_scroll  "#[bg=#007ACC,fg=#FFFFFF,bold] SCROLL "
+                mode_session "#[bg=#007ACC,fg=#FFFFFF,bold] SESSION "
+                mode_move    "#[bg=#007ACC,fg=#FFFFFF,bold] MOVE "
+
+                tab_normal   "#[fg=#343434] {index}·{name} "
+                tab_active   "#[fg=#007ACC,bold] {index}·{name} "
+            }
+        }
+        children
+    }
+
+    tab name="claude" focus=true {
+        pane command="claude" name="Claude"
+    }
+    tab name="editor" {
+        pane command="nvim" name="Editor"
+    }
+    tab name="git" {
+        pane command="lazygit" name="Git"
+    }
+    tab name="term" {
+        pane name="Terminal"
+    }
+}

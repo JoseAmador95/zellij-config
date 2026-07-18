@@ -1,0 +1,12 @@
+# Generados por bootstrap.sh a partir de templates/ (rutas absolutas por máquina)
+/config.kdl
+/layouts/main.kdl
+/layouts/dev.kdl
+/permissions.kdl
+
+# Plugins descargados por bootstrap.sh (versiones fijas en el manifest)
+/plugins/*.wasm
+
+# Backups locales y cruft
+*.bak
+.claude/

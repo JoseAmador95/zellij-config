@@ -1,0 +1,161 @@
+// ════════════════════════════════════════════════════════════════════════
+//  Zellij — config armonizada con nvim (vscode.nvim light) + Ghostty + zsh
+//  Uso: SSH · nvim · Claude Code · vim-motions
+//
+//  Config OVERRIDE-ONLY: sólo se declara lo propio; Zellij hereda el resto.
+//  NO usar `keybinds clear-defaults=true` — eso reescribe los ~179 atajos por
+//  defecto en el archivo (fue lo que la infló a 752 líneas). Si abres el plugin
+//  de configuración de Zellij, puede regenerarla así de nuevo; restaura con
+//  `cp config.kdl.verbose.bak …` sólo si necesitas consultar algún default.
+// ════════════════════════════════════════════════════════════════════════
+
+// ── Comportamiento general ───────────────────────────────────────────────
+default_shell "zsh"
+default_layout "main"               // layouts/main.kdl (zjstatus; nuestro layout base)
+theme "vscode-light"
+
+pane_frames true
+mouse_mode true
+copy_on_select true                 // seleccionar con ratón copia al soltar (OSC52)
+scrollback_editor "nvim"            // editar/seleccionar scrollback con vim-motions
+scroll_buffer_size 100000
+
+// Resiliencia de sesiones (clave para SSH: sobrevive a caídas de conexión)
+session_serialization true
+pane_viewport_serialization true
+
+// clipboard: sin `copy_command` → usa OSC52 del terminal (funciona local y por
+// SSH, igual que nvim). Ghostty soporta OSC52.
+
+ui {
+    pane_frames {
+        rounded_corners true
+        hide_session_name false
+    }
+}
+
+// which-key precargado en background para que Alt-/ sea instantáneo.
+// auto_show=false → NO aparece solo; sólo bajo demanda con Alt-/.
+load_plugins {
+    zellij:link
+    "file:__HOME__/.config/zellij/plugins/zj_which_key.wasm" {
+        auto_show "true"
+        delay_secs "0.4"
+        position "bottom-right"
+        max_height_pct "70"
+    }
+}
+
+// ── Keybindings: locked por defecto + prefijo Ctrl-a + vim-motions ───────
+// Con default_mode "locked", nvim y Claude reciben Ctrl-o/p/n/t sin que Zellij
+// los intercepte. El prefijo Ctrl-a (libre en nvim) abre el modo Normal de
+// Zellij con todos sus atajos hjkl nativos. Alt-hjkl navega el foco siempre.
+default_mode "locked"
+
+keybinds {
+    unbind "Ctrl g"                         // liberar el toggle por defecto
+
+    // Globales (todos los modos): lanzadores de plugin.
+    shared {
+        // sessionizer: fuzzy-pick de proyecto → abre/salta a sesión con layout dev
+        bind "Alt g" {
+            LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-sessionizer.wasm" {
+                floating true
+                move_to_focused_tab true
+                cwd "/"
+                root_dirs "__HOME__/Repositories"
+                session_layout "dev"
+            }
+            SwitchToMode "Locked"   // que las teclas lleguen al plugin, no al modo
+        }
+        // which-key browser: cheatsheet buscable de TODOS los mappings, on-demand
+        bind "Alt /" {
+            LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zj_which_key.wasm" {
+                floating true
+                role "browser"
+            }
+            SwitchToMode "Locked"   // que las teclas lleguen al plugin, no al modo
+        }
+        // Cambiar entre sesiones EXISTENTES (main + proyectos) rápido, desde cualquier modo
+        bind "Alt s" {
+            LaunchOrFocusPlugin "zellij:session-manager" {
+                floating true
+                move_to_focused_tab true
+            }
+            SwitchToMode "Locked"
+        }
+        // Command palette (estilo VSCode): fuzzy sobre acciones de Zellij
+        bind "Alt Space" {
+            LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-palette.wasm" {
+                floating true
+                move_to_focused_tab true
+            }
+            SwitchToMode "Locked"
+        }
+    }
+
+    locked {
+        bind "Ctrl a" { SwitchToMode "Normal"; }
+        // Navegación de foco SIEMPRE activa (vim-motions), incluso en locked:
+        bind "Alt h" { MoveFocusOrTab "Left"; }
+        bind "Alt l" { MoveFocusOrTab "Right"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt n" { NewPane; }
+        // Salto directo a un tab por número (Alt-1 … Alt-9), siempre activo:
+        bind "Alt 1" { GoToTab 1; }
+        bind "Alt 2" { GoToTab 2; }
+        bind "Alt 3" { GoToTab 3; }
+        bind "Alt 4" { GoToTab 4; }
+        bind "Alt 5" { GoToTab 5; }
+        bind "Alt 6" { GoToTab 6; }
+        bind "Alt 7" { GoToTab 7; }
+        bind "Alt 8" { GoToTab 8; }
+        bind "Alt 9" { GoToTab 9; }
+    }
+    normal {
+        bind "Ctrl a" { SwitchToMode "Locked"; }   // Ctrl-a Ctrl-a cancela
+
+        // Estilo tmux: tras Ctrl-a, UNA sola letra abre cada submodo.
+        bind "p" { SwitchToMode "Pane"; }          // paneles
+        bind "t" { SwitchToMode "Tab"; }           // pestañas
+        bind "r" { SwitchToMode "Resize"; }        // redimensionar
+        bind "s" { SwitchToMode "Scroll"; }        // scroll / buscar
+        bind "o" { SwitchToMode "Session"; }       // sesiones (o → detach)
+        bind "m" { SwitchToMode "Move"; }          // mover paneles
+    }
+    // Los Ctrl-<letra> por defecto (Ctrl-p/t/n/s/o/h) siguen funcionando
+    // también; el estilo tmux de letra sola es un alias adicional.
+
+    // Session-manager: al abrirlo, pasar a Locked para poder escribir/navegar
+    // en el float (el default lo deja en Normal y las teclas se interceptan).
+    session {
+        bind "w" {
+            LaunchOrFocusPlugin "zellij:session-manager" {
+                floating true
+                move_to_focused_tab true
+            }
+            SwitchToMode "Locked"
+        }
+    }
+}
+
+// ── Tema vscode-light (paleta Light+ de vscode.nvim) ─────────────────────
+themes {
+    vscode-light {
+        text_unselected       { base 52 52 52;    background 255 255 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        text_selected         { base 52 52 52;    background 173 214 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        ribbon_selected       { base 255 255 255; background 0 122 204;   emphasis_0 205 49 49; emphasis_1 0 128 0;   emphasis_2 175 0 219; emphasis_3 79 193 255; }
+        ribbon_unselected     { base 52 52 52;    background 232 232 232; emphasis_0 205 49 49; emphasis_1 52 52 52;  emphasis_2 0 122 204; emphasis_3 175 0 219; }
+        table_title           { base 0 128 0;     background 0;           emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 175 0 219; emphasis_3 79 193 255; }
+        table_cell_selected   { base 52 52 52;    background 173 214 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        table_cell_unselected { base 52 52 52;    background 255 255 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        list_selected         { base 52 52 52;    background 173 214 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        list_unselected       { base 52 52 52;    background 255 255 255; emphasis_0 199 46 15; emphasis_1 0 122 204; emphasis_2 0 128 0;   emphasis_3 175 0 219; }
+        frame_selected        { base 0 122 204;   background 0;           emphasis_0 79 193 255; emphasis_1 0 128 0;  emphasis_2 175 0 219; emphasis_3 0; }
+        frame_highlight       { base 199 46 15;   background 0;           emphasis_0 199 46 15; emphasis_1 199 46 15; emphasis_2 199 46 15; emphasis_3 199 46 15; }
+        exit_code_success     { base 0 128 0;     background 0;           emphasis_0 22 130 93; emphasis_1 255 255 255; emphasis_2 9 134 88; emphasis_3 0 122 204; }
+        exit_code_error       { base 205 49 49;   background 0;           emphasis_0 121 94 38; emphasis_1 255 255 255; emphasis_2 0;        emphasis_3 0; }
+        multiplayer_user_colors { player_1 0 122 204; player_2 175 0 219; player_3 0; player_4 199 46 15; player_5 22 130 93; player_6 0; player_7 205 49 49; player_8 0; }
+    }
+}
