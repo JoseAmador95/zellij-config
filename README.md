@@ -42,6 +42,7 @@ Usa `__HOME__` donde vaya una ruta bajo tu home. Los `scripts/*.sh` no llevan ru
 | zellij-sessionizer | laperlej/zellij-sessionizer | v0.5.0 | `Alt-g` — abrir proyecto de `~/Repositories` |
 | zj-which-key | johnae/zj-which-key | v0.2.0 | hints de mappings (auto + `Alt-/` browser) |
 | zellij-palette | timonwong/zellij-palette | v0.2.2 | `Alt-space` — command palette |
+| zellij-switch | mostafaqanbaryan/zellij-switch | 0.2.1 | cambiar/crear sesión con `cwd` desde dentro (usado por `zjcwd`) |
 
 Para actualizar un plugin: cambia su `tag` en el manifest dentro de `bootstrap.sh` y re-ejecuta.
 
@@ -91,6 +92,20 @@ Añádelas a mano en cada máquina:
   ruta fija) se auto-curan al reconectar. Paneles ya abiertos: una vez
   `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"`. Hay que ponerlo en cada host al que entres
   por SSH. Ojo seguridad: root en el host puede usar tu agente mientras estás conectado.
+
+- **Función `zjcwd`** — en `~/.config/sh/rc.sh`, crea/salta a una sesión en el directorio
+  actual SIN anidar (`zellij -s` anida estando dentro de Zellij):
+  ```sh
+  zjcwd() {
+    local name="${PWD##*/}"; name="${name//./_}"
+    if [ -n "$ZELLIJ" ]; then
+      zellij pipe --plugin "file:$HOME/.config/zellij/plugins/zellij-switch.wasm" \
+        -- "--session $name --cwd $PWD --layout dev"
+    else
+      zellij -s "$name" -n dev
+    fi
+  }
+  ```
 
 - **Ghostty `Shift+Enter`** — en `~/.config/ghostty/config`:
   ```ini

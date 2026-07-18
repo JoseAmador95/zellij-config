@@ -33,7 +33,8 @@ info "config.kdl, layouts/main.kdl, layouts/dev.kdl, permissions.kdl generados"
 PLUGINS='dj95/zjstatus|v0.24.0|zjstatus.wasm
 laperlej/zellij-sessionizer|v0.5.0|zellij-sessionizer.wasm
 johnae/zj-which-key|v0.2.0|zj_which_key.wasm
-timonwong/zellij-palette|v0.2.2|zellij-palette.wasm'
+timonwong/zellij-palette|v0.2.2|zellij-palette.wasm
+mostafaqanbaryan/zellij-switch|0.2.1|zellij-switch.wasm'
 
 mkdir -p plugins
 is_wasm() { [ -s "$1" ] && [ "$(head -c4 "$1" | od -An -tx1 2>/dev/null | tr -dc '0-9a-f')" = "0061736d" ]; }

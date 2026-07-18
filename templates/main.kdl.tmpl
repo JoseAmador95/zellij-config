@@ -11,21 +11,18 @@ layout {
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="file:__HOME__/.config/zellij/plugins/zjstatus.wasm" {
-                format_left  "{mode} {command_host} {command_session} {tabs}"
+                format_left  "{mode} {command_host} #[bg=#8E24AA,fg=#FFFFFF,bold]  📁 {session}  #[default] {tabs}"
                 format_right ""
                 format_space ""
 
-                // hostname — pastilla con color/emoji determinista por hostname
+                // hostname — pastilla con color/emoji determinista por hostname (hash)
                 command_host_command    "sh __HOME__/.config/zellij/scripts/hostname-color.sh"
                 command_host_format     "{stdout}"
                 command_host_interval   "10"
                 command_host_rendermode "dynamic"
-
-                // nombre de sesión — pastilla con color/emoji determinista por sesión
-                command_session_command    "sh __HOME__/.config/zellij/scripts/session-color.sh"
-                command_session_format     "{stdout}"
-                command_session_interval   "10"
-                command_session_rendermode "dynamic"
+                // nombre de sesión: widget nativo {session} con estilo FIJO. zjstatus no
+                // puede pasar el nombre a un command widget, así que el color/emoji no
+                // puede ser por-hash como el hostname; queda fijo (morado + 📁).
 
                 mode_normal  "#[bg=#007ACC,fg=#FFFFFF,bold] NORMAL "
                 mode_locked  "#[bg=#E8E8E8,fg=#343434,bold] LOCKED "
