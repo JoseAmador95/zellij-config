@@ -66,7 +66,7 @@ mkdir -p "$CACHE"
 cp permissions.kdl "$CACHE/permissions.kdl"
 info "permisos sembrados → $CACHE/permissions.kdl"
 
-# --- 5) sourcear las funciones de shell (zjcwd, zjssh) en el rc (idempotente) --
+# --- 5) sourcear las funciones de shell (zj, zjcwd) en el rc (idempotente) ----
 RC="$HOME/.zshrc"
 if [ -f "$HOME/.config/sh/rc.sh" ]; then RC="$HOME/.config/sh/rc.sh"; fi
 if grep -qF '# >>> zj-functions >>>' "$RC" 2>/dev/null; then
@@ -87,13 +87,12 @@ done
 
 cat <<'EOF'
 
-OK. Piezas EXTERNAS a este repo (añádelas a mano en cada máquina):
-  • Auto-start del shell (~/.config/sh/rc.sh o ~/.zshrc), en shell interactivo:
-      if [ -z "$ZELLIJ" ] && [ -t 1 ]; then
-        zellij attach -c main options --default-layout main && exit
-      fi
+OK. Zellij es OPT-IN: no auto-arranca. Abre una terminal nueva y entra con:
+  zj        → sesión 'main'          zjcwd → sesión en el directorio actual
+  ssh mmja  → shell remoto plano → allí 'zj' para el Zellij remoto (sin anidar)
+
+Piezas EXTERNAS a este repo (añádelas a mano en cada host que uses):
+  • SSH agent forwarding estable (bloque SSH_AGENT en ~/.config/sh/rc.sh) — ver README.
   • Ghostty (~/.config/ghostty/config) para Shift+Enter en Claude/nvim:
       keybind = shift+enter=text:\x1b\r
-
-Abre una terminal nueva para estrenar la sesión 'main'.
 EOF

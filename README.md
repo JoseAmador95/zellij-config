@@ -57,9 +57,13 @@ Alt-space     command palette              Alt-/   which-key (cheatsheet)
 ```
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
 
-**Funciones de shell** (`shell/functions.sh`, sourced automáticamente por `bootstrap.sh`):
-`zjcwd` (crea/salta a una sesión en el directorio actual) · `zjssh <host>` (ssh a un host con
-su propio Zellij, en ventana nueva, sin anidar).
+**Zellij es opt-in** (no auto-arranca). **Funciones de shell** (`shell/functions.sh`, sourced
+automáticamente por `bootstrap.sh`):
+- `zj` — abrir/entrar a la sesión `main` (adjunta o crea, con el layout). `zj foo` → sesión `foo`.
+- `zjcwd` — crea/salta a una sesión rooteada en el directorio actual.
+
+Con SSH y Zellij en ambos hosts: terminal local → shell plano; `zj` para Zellij local. `ssh mmja`
+→ shell remoto plano → `zj` → Zellij remoto persistente, en la terminal actual y **sin anidar**.
 
 ## Dependencias
 
@@ -70,20 +74,13 @@ los plugins requieren Zellij ≥ 0.44.
 
 Añádelas a mano en cada máquina:
 
-- **Auto-start del shell** — en `~/.config/sh/rc.sh` (o `~/.zshrc`), en shell interactivo:
-  ```sh
-  if [ -z "$ZELLIJ" ] && [ -t 1 ]; then
-    zellij attach -c main options --default-layout main && exit
-  fi
-  ```
-  Adjunta/crea siempre la sesión `main` con nuestro layout; `&& exit` cierra la terminal al
-  salir de Zellij. En macOS, si Brew no está en PATH para shells no-interactivos, mete
+- **Zellij opt-in (no auto-start)** — no hay arranque automático; entras con `zj` (ver arriba).
+  En macOS, si Brew no está en PATH para shells no-interactivos, mete
   `eval "$(/opt/homebrew/bin/brew shellenv)"` en `~/.zshenv`.
 
 - **SSH agent forwarding estable** — si entras con `ssh -A` a un host que corre Zellij, el
   socket del agente forwardeado cambia en cada conexión y Zellij persiste los paneles con el
-  socket viejo (muerto) → "no hay llaves". Fíjalo a una ruta estable en `~/.config/sh/rc.sh`,
-  **antes** del auto-start de arriba:
+  socket viejo (muerto) → "no hay llaves". Fíjalo a una ruta estable en `~/.config/sh/rc.sh`:
   ```sh
   if [ -n "$SSH_CONNECTION" ]; then
     if [ -S "$SSH_AUTH_SOCK" ] && [ "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent.sock" ]; then
@@ -96,13 +93,6 @@ Añádelas a mano en cada máquina:
   ruta fija) se auto-curan al reconectar. Paneles ya abiertos: una vez
   `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"`. Hay que ponerlo en cada host al que entres
   por SSH. Ojo seguridad: root en el host puede usar tu agente mientras estás conectado.
-
-- **SSH sin anidar Zellij** — si el host local y el remoto corren Zellij, entrar por `ssh`
-  desde dentro de Zellij local **anida** (dos barras), porque `$ZELLIJ` no se reenvía. Setup
-  "el remoto gana" (persistencia remota): el auto-start local respeta **`NO_ZELLIJ`** — añade
-  `&& [[ -z "$NO_ZELLIJ" ]]` a su guard. Luego usa **`zjssh <host>`** (función auto-sourced,
-  ver arriba), que lanza el ssh en una ventana Ghostty nueva sin Zellij local → el Zellij del
-  remoto es el workspace, sin anidar. Shell local plano manual: `NO_ZELLIJ=1` al abrir el terminal.
 
 - **Ghostty `Shift+Enter`** — en `~/.config/ghostty/config`:
   ```ini
