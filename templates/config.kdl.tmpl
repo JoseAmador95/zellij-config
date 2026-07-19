@@ -38,12 +38,9 @@ ui {
 // auto_show=false → NO aparece solo; sólo bajo demanda con Alt-/.
 load_plugins {
     zellij:link
-    "file:__HOME__/.config/zellij/plugins/zj_which_key.wasm" {
-        auto_show "true"
-        delay_secs "0.4"
-        position "bottom-right"
-        max_height_pct "70"
-    }
+    // which-key NO se carga en background a propósito: los plugins de load_plugins
+    // no honran la caché de permisos (bug zellij #4982) y re-preguntan en cada
+    // sesión. Se pierde el auto_show; which-key sigue on-demand con Alt-/ (browser).
 }
 
 // ── Keybindings: locked por defecto + prefijo Ctrl-a + vim-motions ───────
