@@ -7,19 +7,22 @@ Config de Zellij armonizada con **nvim (vscode.nvim light) + Ghostty + zsh**, pe
 ## Puesta en marcha en una máquina nueva
 
 ```sh
-git clone <este-repo> ~/.config/zellij
-cd ~/.config/zellij
-./bootstrap.sh
+brew install zellij
+git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~/.config/zellij && ./bootstrap.sh
 ```
+
+> Si el mac aún no tiene tu llave SSH, usa la URL HTTPS:
+> `https://github.com/JoseAmador95/zellij-config.git`.
 
 `bootstrap.sh` (idempotente, POSIX sh) hace:
 1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl` y `permissions.kdl` desde
    `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real. Necesario porque **Zellij
-   no expande `~`/`$HOME`** en rutas de plugin ni el sessionizer en `root_dirs`.
-2. Descarga los plugins `.wasm` a versión fija.
+   no expande `~`/`$HOME`** en rutas de plugin.
+2. Descarga los plugins `.wasm` a versión fija (aborta si alguno no baja/valida).
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
    Linux `~/.cache/zellij/`) para evitar los prompts de permiso.
+5. Cablea las funciones de shell (`zj`, `zjcwd`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
 
 ## ✍️ Cómo editar la config
 
@@ -39,7 +42,6 @@ Usa `__HOME__` donde vaya una ruta bajo tu home. Los `scripts/*.sh` no llevan ru
 | Plugin | Repo | Tag | Para qué |
 |---|---|---|---|
 | zjstatus | dj95/zjstatus | v0.24.0 | barra superior (modo, host, sesión, tabs) |
-| zellij-sessionizer | laperlej/zellij-sessionizer | v0.5.0 | `Alt-g` — abrir proyecto de `~/Repositories` |
 | zj-which-key | johnae/zj-which-key | v0.2.0 | hints de mappings (auto + `Alt-/` browser) |
 | zellij-palette | timonwong/zellij-palette | v0.2.2 | `Alt-space` — command palette |
 | zellij-switch | mostafaqanbaryan/zellij-switch | 0.2.1 | cambiar/crear sesión con `cwd` desde dentro (usado por `zjcwd`) |
@@ -51,8 +53,7 @@ Para actualizar un plugin: cambia su `tag` en el manifest dentro de `bootstrap.s
 ```
 Ctrl-a        despertar Zellij (→ Normal) · Ctrl-a Ctrl-a → Locked
 Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
-Alt-1…9       ir al tab N
-Alt-g         sessionizer (proyectos)      Alt-s   session-manager (sesiones)
+Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
 ```
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
@@ -102,7 +103,8 @@ Añádelas a mano en cada máquina:
 
 ## Notas
 
-- La barra muestra `[MODO] [🦀 host] [📁 sesión] [tabs]`. host y sesión llevan color+emoji
-  **deterministas por hash** (mismo nombre → mismo look), vía `scripts/hostname-color.sh` y
-  `scripts/session-color.sh`.
+- La barra muestra `[MODO] [🦀 host] [📁 sesión] [tabs]`. El **host** lleva color+emoji
+  determinista por hash (mismo nombre → mismo look), vía `scripts/hostname-color.sh`. El nombre
+  de **sesión** usa un estilo fijo (morado + 📁): zjstatus no puede pasar `{session}` a un
+  command widget, así que su color no puede ser por-hash como el del host.
 - `config.kdl.verbose.bak` / `config.kdl.bak` son respaldos locales (ignorados por git).
