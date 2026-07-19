@@ -53,17 +53,6 @@ keybinds {
 
     // Globales (todos los modos): lanzadores de plugin.
     shared {
-        // sessionizer: fuzzy-pick de proyecto → abre/salta a sesión con layout dev
-        bind "Alt g" {
-            LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-sessionizer.wasm" {
-                floating true
-                move_to_focused_tab true
-                cwd "/"
-                root_dirs "__HOME__/Repositories"
-                session_layout "dev"
-            }
-            SwitchToMode "Locked"   // que las teclas lleguen al plugin, no al modo
-        }
         // which-key browser: cheatsheet buscable de TODOS los mappings, on-demand
         bind "Alt /" {
             LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zj_which_key.wasm" {

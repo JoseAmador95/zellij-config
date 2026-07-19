@@ -31,14 +31,22 @@ info "config.kdl, layouts/main.kdl, layouts/dev.kdl, permissions.kdl generados"
 # --- 2) plugins pinneados (los .wasm son cross-platform) ---------------------
 # repo|tag|asset
 PLUGINS='dj95/zjstatus|v0.24.0|zjstatus.wasm
-laperlej/zellij-sessionizer|v0.5.0|zellij-sessionizer.wasm
 johnae/zj-which-key|v0.2.0|zj_which_key.wasm
 timonwong/zellij-palette|v0.2.2|zellij-palette.wasm
 mostafaqanbaryan/zellij-switch|0.2.1|zellij-switch.wasm'
 
 mkdir -p plugins
 is_wasm() { [ -s "$1" ] && [ "$(head -c4 "$1" | od -An -tx1 2>/dev/null | tr -dc '0-9a-f')" = "0061736d" ]; }
-echo "$PLUGINS" | while IFS='|' read -r repo tag asset; do
+# NO usamos `... | while` (subshell): una descarga fallida debe abortar el bootstrap,
+# y una bandera puesta dentro del subshell del pipe no sobreviviría. Iteramos en el
+# shell actual partiendo por líneas (IFS=newline) y por '|' dentro de cada entrada.
+fail=0
+OLDIFS=$IFS
+IFS='
+'
+for entry in $PLUGINS; do
+  IFS='|'; set -- $entry; IFS=$OLDIFS
+  repo=$1; tag=$2; asset=$3
   [ -n "$repo" ] || continue
   dest="plugins/$asset"
   if is_wasm "$dest"; then
@@ -49,9 +57,12 @@ echo "$PLUGINS" | while IFS='|' read -r repo tag asset; do
       info "$asset ($tag) descargado"
     else
       warn "no se pudo bajar/validar $asset ($url)"
+      fail=1
     fi
   fi
 done
+IFS=$OLDIFS
+[ "$fail" = 0 ] || { warn "abortando: faltan plugins (revisa red/tags arriba)"; exit 1; }
 
 # --- 3) scripts ejecutables --------------------------------------------------
 chmod +x scripts/*.sh bootstrap.sh 2>/dev/null || true
