@@ -34,13 +34,12 @@ ui {
     }
 }
 
-// which-key precargado en background para que Alt-/ sea instantáneo.
-// auto_show=false → NO aparece solo; sólo bajo demanda con Alt-/.
+// which-key NO va en load_plugins (background): sin auto_show — no queremos el buffer
+// que tapa contenido, y además los plugins de load_plugins no honran la caché de
+// permisos (bug zellij #4982) y re-preguntan cada sesión. which-key sólo on-demand
+// con Alt-/ (el cheatsheet buscable).
 load_plugins {
     zellij:link
-    // which-key NO se carga en background a propósito: los plugins de load_plugins
-    // no honran la caché de permisos (bug zellij #4982) y re-preguntan en cada
-    // sesión. Se pierde el auto_show; which-key sigue on-demand con Alt-/ (browser).
 }
 
 // ── Keybindings: locked por defecto + prefijo Ctrl-a + vim-motions ───────
