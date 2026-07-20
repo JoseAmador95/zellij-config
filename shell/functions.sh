@@ -25,3 +25,15 @@ zjcwd() {
     zellij -s "$name" -n dev
   fi
 }
+
+# zjssh <host> — sesión EXCLUSIVA para un host SSH: cada tab/pane nuevo entra al host.
+# El remoto NO corre Zellij (aquí sólo el cliente) → shells remotos planos, sin anidar.
+# Override `default_shell` → scripts/ssh-host.sh, que hace `exec ssh $ZJ_SSH_HOST`.
+# Opciones por-host (usuario, puerto, -A) van en ~/.ssh/config, no aquí.
+zjssh() {
+  [ -n "$1" ] || { echo "uso: zjssh <host|alias-de-~/.ssh/config>"; return 1; }
+  local host="$1" sess="ssh_${1//[^A-Za-z0-9_-]/_}"
+  ZJ_SSH_HOST="$host" zellij attach -c "$sess" \
+    options --default-layout main \
+            --default-shell "$HOME/.config/zellij/scripts/ssh-host.sh"
+}
