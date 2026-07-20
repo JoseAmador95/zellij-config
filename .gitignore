@@ -7,6 +7,9 @@
 # Plugins descargados por bootstrap.sh (versiones fijas en el manifest)
 /plugins/*.wasm
 
+# Override por-host del agente del layout dev (ver scripts/agent.sh)
+/agent.local
+
 # Backups locales y cruft
 *.bak
 .claude/

@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-//  Layout "dev" — tabs para Claude, editor, git y terminal libre.
+//  Layout "dev" — tabs para el agente (claude/codex), editor, git y terminal libre.
 //  Uso:  zellij -s <proyecto> -n dev
 //
 //  Barra igual que "main": zjstatus arriba (sin "zellij"/sesión),
@@ -40,8 +40,12 @@ layout {
         children
     }
 
-    tab name="claude" focus=true {
-        pane command="claude" name="Claude"
+    // Agente de IA host-agnóstico: agent.sh resuelve claude/codex/… vía
+    // $ZJ_AGENT o ~/.config/zellij/agent.local (ver scripts/agent.sh).
+    tab name="agent" focus=true {
+        pane command="sh" name="Agent" {
+            args "__HOME__/.config/zellij/scripts/agent.sh"
+        }
     }
     tab name="editor" {
         pane command="nvim" name="Editor"
