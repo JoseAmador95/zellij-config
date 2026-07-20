@@ -22,7 +22,7 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
    Linux `~/.cache/zellij/`) para evitar los prompts de permiso.
-5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
+5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`, `zjssh`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
 
 **Reinstall limpio:** `./bootstrap.sh --clean` re-baja los plugins, regenera los `.kdl` y **borra las
 sesiones serializadas**. Úsalo cuando cambies un layout y no se refleje: con `session_serialization`
@@ -68,6 +68,7 @@ automáticamente por `bootstrap.sh`):
 - `zj` — abrir/entrar a la sesión `main` (adjunta o crea, con el layout). `zj foo` → sesión `foo`.
 - `zjcwd` — crea/salta a una sesión rooteada en el directorio actual.
 - `agent` — lanza el agente de IA de ESTE host (ver abajo).
+- `zjssh <host>` — sesión dedicada a un host SSH; cada tab/pane nuevo entra al host (ver abajo).
 
 Con SSH y Zellij en ambos hosts: terminal local → shell plano; `zj` para Zellij local. `ssh mmja`
 → shell remoto plano → `zj` → Zellij remoto persistente, en la terminal actual y **sin anidar**.
@@ -85,6 +86,28 @@ resuelve por override **explícito** (sin autodetección), en este orden:
 
 Acepta argumentos (`echo 'claude --resume' > ~/.config/zellij/agent.local`). `agent.local` está en
 `.gitignore` (es por-host).
+
+### Sesión por host SSH (`zjssh <host>`)
+
+`zjssh mmja` abre (o entra a) una sesión **`ssh_mmja` dedicada al host**, donde **cada tab/pane
+nuevo entra solo por SSH** — no un shell local. Útil para trabajar en un remoto con varias tabs sin
+teclear `ssh` cada vez. `exit` cierra el tab como un shell normal.
+
+Cómo: el remoto **no** corre Zellij (aquí sólo el cliente), así que son shells remotos planos, sin
+anidar. `zjssh` overridea el `default_shell` de esa sesión a `scripts/ssh-host.sh`, que hace
+`exec ssh $ZJ_SSH_HOST`; como los tabs del layout `main` son "sin comando", **todos** heredan ese
+shell. `default_shell` sólo acepta un binario (no `ssh host` con args), de ahí el wrapper.
+
+- **Opciones por-host** (usuario, puerto, `-A` para reenviar el agente) → `~/.ssh/config`, no en `zjssh`.
+- **Eficiencia:** N tabs = N conexiones. Para compartir una sola, en `~/.ssh/config`:
+  ```
+  Host *
+    ControlMaster auto
+    ControlPath ~/.ssh/cm-%C
+    ControlPersist 10m
+  ```
+- **Serialización:** el `default_shell` de la sesión queda "horneado" al crearla; para cambiarlo,
+  borra la sesión (`zellij delete-session ssh_<host>`) o `./bootstrap.sh --clean`.
 
 ## Dependencias
 
