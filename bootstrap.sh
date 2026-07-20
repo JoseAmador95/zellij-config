@@ -10,6 +10,9 @@
 #   2) descarga los plugins .wasm a una VERSIÓN FIJA
 #   3) hace ejecutables los scripts de la barra
 #   4) siembra los permisos de plugin en la caché del SO (evita los prompts)
+#
+# Flag --clean: reinstala limpio (re-baja plugins, regenera los .kdl y borra las sesiones
+# serializadas). Úsalo cuando cambies un layout y no se refleje (ver aviso al final).
 set -eu
 
 DIR=$(cd "$(dirname "$0")" && pwd)
@@ -18,7 +21,29 @@ cd "$DIR"
 info() { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 warn() { printf '  \033[33m!\033[0m %s\n' "$1"; }
 
+# --- 0) flags ----------------------------------------------------------------
+CLEAN=0
+for arg in "$@"; do
+  case "$arg" in
+    --clean|-c) CLEAN=1 ;;
+    -h|--help)
+      printf 'uso: %s [--clean]\n' "$0"
+      printf '  (sin flags)  genera archivos, baja los plugins que falten, siembra permisos\n'
+      printf '  --clean, -c  reinstala limpio: re-baja plugins, regenera los .kdl y borra las\n'
+      printf '               sesiones serializadas (para que un layout cambiado aplique)\n'
+      exit 0 ;;
+    *) warn "arg desconocido: $arg (ignorado)" ;;
+  esac
+done
+
 echo "Zellij bootstrap → $DIR  (HOME=$HOME, $(uname -s))"
+[ "$CLEAN" = 1 ] && info "modo --clean: reinstalación limpia"
+
+# --- limpieza previa (--clean): fuerza regeneración y re-descarga ------------
+if [ "$CLEAN" = 1 ]; then
+  rm -f config.kdl layouts/main.kdl layouts/dev.kdl permissions.kdl plugins/*.wasm
+  info ".kdl generados y plugins/*.wasm borrados (se recrean abajo)"
+fi
 
 # --- 1) materializar plantillas (__HOME__ -> $HOME) --------------------------
 gen() { mkdir -p "$(dirname "$2")"; sed "s|__HOME__|$HOME|g" "$1" > "$2"; }
@@ -77,6 +102,15 @@ mkdir -p "$CACHE"
 cp permissions.kdl "$CACHE/permissions.kdl"
 info "permisos sembrados → $CACHE/permissions.kdl"
 
+# --- 4b) (--clean) borrar sesiones serializadas ------------------------------
+# Zellij resucita las sesiones con el layout que tenían al CREARSE; para que un
+# layout cambiado aplique hay que borrar las serializadas. SIN --force: no toca
+# sesiones vivas (p.ej. si corres esto desde dentro de Zellij).
+if [ "$CLEAN" = 1 ] && command -v zellij >/dev/null 2>&1; then
+  zellij delete-all-sessions --yes >/dev/null 2>&1 || true
+  info "sesiones serializadas borradas (delete-all-sessions --yes)"
+fi
+
 # --- 5) sourcear las funciones de shell (zj, zjcwd) en el rc (idempotente) ----
 RC="$HOME/.zshrc"
 if [ -f "$HOME/.config/sh/rc.sh" ]; then RC="$HOME/.config/sh/rc.sh"; fi
@@ -101,6 +135,12 @@ cat <<'EOF'
 OK. Zellij es OPT-IN: no auto-arranca. Abre una terminal nueva y entra con:
   zj        → sesión 'main'          zjcwd → sesión en el directorio actual
   ssh mmja  → shell remoto plano → allí 'zj' para el Zellij remoto (sin anidar)
+
+Ojo: los cambios de config/layout NO aplican a sesiones YA creadas (session_serialization).
+Para forzarlos: sal de la sesión y corre  ./bootstrap.sh --clean  (borra las serializadas).
+
+Layout 'dev': el tab 'agent' lanza tu agente de IA. Elígelo por host con
+  export ZJ_AGENT=<cmd>   o   echo <cmd> > ~/.config/zellij/agent.local   (claude, codex, …)
 
 Piezas EXTERNAS a este repo (añádelas a mano en cada host que uses):
   • SSH agent forwarding estable (bloque SSH_AGENT en ~/.config/sh/rc.sh) — ver README.
