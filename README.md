@@ -22,7 +22,12 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
    Linux `~/.cache/zellij/`) para evitar los prompts de permiso.
-5. Cablea las funciones de shell (`zj`, `zjcwd`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
+5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
+
+**Reinstall limpio:** `./bootstrap.sh --clean` re-baja los plugins, regenera los `.kdl` y **borra las
+sesiones serializadas**. Úsalo cuando cambies un layout y no se refleje: con `session_serialization`
+Zellij resucita las sesiones con el layout que tenían al **crearse**, así que regenerar `layouts/dev.kdl`
+no toca una sesión existente. `--clean` no mata sesiones vivas (sal de ellas primero si aplica).
 
 ## ✍️ Cómo editar la config
 
@@ -62,9 +67,24 @@ En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll 
 automáticamente por `bootstrap.sh`):
 - `zj` — abrir/entrar a la sesión `main` (adjunta o crea, con el layout). `zj foo` → sesión `foo`.
 - `zjcwd` — crea/salta a una sesión rooteada en el directorio actual.
+- `agent` — lanza el agente de IA de ESTE host (ver abajo).
 
 Con SSH y Zellij en ambos hosts: terminal local → shell plano; `zj` para Zellij local. `ssh mmja`
 → shell remoto plano → `zj` → Zellij remoto persistente, en la terminal actual y **sin anidar**.
+
+### Agente por host (layout `dev`)
+
+El primer tab del layout `dev` (el que abre `zjcwd`) corre `agent`, que resuelve **qué** agente de IA
+lanzar en cada máquina — `claude` en casa, `codex` en el trabajo, etc. Un alias de shell no sirve aquí:
+un pane de Zellij ejecuta el binario directo, sin pasar por tu `.zshrc`. Por eso `scripts/agent.sh` lo
+resuelve por override **explícito** (sin autodetección), en este orden:
+
+1. `$ZJ_AGENT` — ej. `export ZJ_AGENT=codex` en tu rc por-host.
+2. `~/.config/zellij/agent.local` (1ª línea útil) — ej. `echo claude > ~/.config/zellij/agent.local`.
+3. Si no defines ninguno, abre un shell con un aviso (el pane queda usable).
+
+Acepta argumentos (`echo 'claude --resume' > ~/.config/zellij/agent.local`). `agent.local` está en
+`.gitignore` (es por-host).
 
 ## Dependencias
 
