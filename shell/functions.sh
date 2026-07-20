@@ -9,6 +9,10 @@
 # `zj` → sesión "main"; `zj foo` → sesión "foo". Sin `&& exit`: al salir vuelves al shell.
 zj() { zellij attach -c "${1:-main}" options --default-layout main; }
 
+# agent — lanza el agente de IA de ESTE host (claude/codex/…). Mismo resolvedor que usa el
+# layout `dev`. Config por-host: `export ZJ_AGENT=<cmd>` o `echo <cmd> > ~/.config/zellij/agent.local`.
+agent() { "$HOME/.config/zellij/scripts/agent.sh"; }
+
 # zjcwd — crea (o salta a) una sesión rooteada en el directorio ACTUAL, SIN anidar.
 # Dentro de Zellij usa zellij-switch (cambia de sesión vía plugin, sin nesting, que es lo
 # que `zellij -s` no puede hacer estando adjunto); fuera, el CLI normal.
