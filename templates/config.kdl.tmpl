@@ -87,6 +87,9 @@ keybinds {
         bind "Alt j" { MoveFocus "Down"; }
         bind "Alt k" { MoveFocus "Up"; }
         bind "Alt n" { NewPane; }
+        // Alt-t crea un tab (simétrico con Alt-n). En locked pisa el `transpose-words`
+        // (ESC-t) de zsh; asumido, no lo uso.
+        bind "Alt t" { NewTab; }
         // Salto directo a un tab por número (Alt-1 … Alt-9), siempre activo:
         bind "Alt 1" { GoToTab 1; }
         bind "Alt 2" { GoToTab 2; }
