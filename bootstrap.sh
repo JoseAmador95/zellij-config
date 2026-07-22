@@ -41,7 +41,7 @@ echo "Zellij bootstrap → $DIR  (HOME=$HOME, $(uname -s))"
 
 # --- limpieza previa (--clean): fuerza regeneración y re-descarga ------------
 if [ "$CLEAN" = 1 ]; then
-  rm -f config.kdl layouts/main.kdl layouts/dev.kdl permissions.kdl plugins/*.wasm
+  rm -f config.kdl layouts/main.kdl layouts/dev.kdl layouts/ssh.kdl permissions.kdl plugins/*.wasm
   info ".kdl generados y plugins/*.wasm borrados (se recrean abajo)"
 fi
 
@@ -50,8 +50,9 @@ gen() { mkdir -p "$(dirname "$2")"; sed "s|__HOME__|$HOME|g" "$1" > "$2"; }
 gen templates/config.kdl.tmpl      config.kdl
 gen templates/main.kdl.tmpl        layouts/main.kdl
 gen templates/dev.kdl.tmpl         layouts/dev.kdl
+gen templates/ssh.kdl.tmpl         layouts/ssh.kdl
 gen templates/permissions.kdl.tmpl permissions.kdl
-info "config.kdl, layouts/main.kdl, layouts/dev.kdl, permissions.kdl generados"
+info "config.kdl, layouts/main.kdl, layouts/dev.kdl, layouts/ssh.kdl, permissions.kdl generados"
 
 # --- 2) plugins pinneados (los .wasm son cross-platform) ---------------------
 # repo|tag|asset

@@ -2,6 +2,7 @@
 /config.kdl
 /layouts/main.kdl
 /layouts/dev.kdl
+/layouts/ssh.kdl
 /permissions.kdl
 
 # Plugins descargados por bootstrap.sh (versiones fijas en el manifest)

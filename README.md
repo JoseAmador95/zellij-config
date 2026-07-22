@@ -15,9 +15,9 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 > `https://github.com/JoseAmador95/zellij-config.git`.
 
 `bootstrap.sh` (idempotente, POSIX sh) hace:
-1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl` y `permissions.kdl` desde
-   `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real. Necesario porque **Zellij
-   no expande `~`/`$HOME`** en rutas de plugin.
+1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl`, `layouts/ssh.kdl` y
+   `permissions.kdl` desde `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real.
+   Necesario porque **Zellij no expande `~`/`$HOME`** en rutas de plugin.
 2. Descarga los plugins `.wasm` a versión fija (aborta si alguno no baja/valida).
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
@@ -49,7 +49,7 @@ Usa `__HOME__` donde vaya una ruta bajo tu home. Los `scripts/*.sh` no llevan ru
 | zjstatus | dj95/zjstatus | v0.24.0 | barra superior (modo, host, sesión, tabs) |
 | zj-which-key | johnae/zj-which-key | v0.2.0 | hints de mappings (auto + `Alt-/` browser) |
 | zellij-palette | timonwong/zellij-palette | v0.2.2 | `Alt-space` — command palette |
-| zellij-switch | mostafaqanbaryan/zellij-switch | 0.2.1 | cambiar/crear sesión con `cwd` desde dentro (usado por `zjcwd`) |
+| zellij-switch | mostafaqanbaryan/zellij-switch | 0.2.1 | cambiar/crear sesión desde dentro sin anidar (usado por `zjcwd` y `zjssh`) |
 
 Para actualizar un plugin: cambia su `tag` en el manifest dentro de `bootstrap.sh` y re-ejecuta.
 
@@ -68,7 +68,7 @@ automáticamente por `bootstrap.sh`):
 - `zj` — abrir/entrar a la sesión `main` (adjunta o crea, con el layout). `zj foo` → sesión `foo`.
 - `zjcwd` — crea/salta a una sesión rooteada en el directorio actual.
 - `agent` — lanza el agente de IA de ESTE host (ver abajo).
-- `zjssh <host>` — sesión dedicada a un host SSH; cada tab/pane nuevo entra al host (ver abajo).
+- `zjssh <host>` — sesión dedicada a un host SSH; cada tab nuevo entra al host, sin anidar (ver abajo).
 
 Con SSH y Zellij en ambos hosts: terminal local → shell plano; `zj` para Zellij local. `ssh mmja`
 → shell remoto plano → `zj` → Zellij remoto persistente, en la terminal actual y **sin anidar**.
@@ -89,15 +89,25 @@ Acepta argumentos (`echo 'claude --resume' > ~/.config/zellij/agent.local`). `ag
 
 ### Sesión por host SSH (`zjssh <host>`)
 
-`zjssh mmja` abre (o entra a) una sesión **`ssh_mmja` dedicada al host**, donde **cada tab/pane
-nuevo entra solo por SSH** — no un shell local. Útil para trabajar en un remoto con varias tabs sin
+`zjssh mmja` abre (o entra a) una sesión **`ssh_mmja` dedicada al host**, donde **cada tab nuevo
+entra solo por SSH** — no un shell local. Útil para trabajar en un remoto con varias tabs sin
 teclear `ssh` cada vez. `exit` cierra el tab como un shell normal.
 
-Cómo: el remoto **no** corre Zellij (aquí sólo el cliente), así que son shells remotos planos, sin
-anidar. `zjssh` overridea el `default_shell` de esa sesión a `scripts/ssh-host.sh`, que hace
-`exec ssh $ZJ_SSH_HOST`; como los tabs del layout `main` son "sin comando", **todos** heredan ese
-shell. `default_shell` sólo acepta un binario (no `ssh host` con args), de ahí el wrapper.
+**Sin anidar (igual que `zjcwd`):** `zjssh` no arranca un cliente Zellij dentro de otro.
+- **Dentro de Zellij** cambia de sesión con el plugin **zellij-switch** (como `zjcwd`). El plugin
+  sólo pasa `--session`/`--layout` (no env ni `default_shell`), así que el SSH lo hornea el
+  **layout `ssh`**: sus panes corren `scripts/ssh-host.sh`, que hace `exec ssh <host>`. Sin
+  `$ZJ_SSH_HOST`, `ssh-host.sh` **deriva el host del nombre `ssh_<host>`** → usa un alias de
+  `~/.ssh/config` (para `user@host`/`-A`, ponlo como `Host` en `~/.ssh/config`).
+- **Fuera de Zellij** usa el CLI normal (`zellij attach -c`) con `$ZJ_SSH_HOST` (host exacto,
+  permite `user@host`/`-A`) y `--default-shell scripts/ssh-host.sh`.
 
+`ssh-host.sh` se auto-blinda: sólo hace SSH si la sesión se llama `ssh_<host>`; en cualquier otra
+abre un shell local. El remoto **no** corre Zellij (aquí sólo el cliente) → shells remotos planos.
+
+- **Splits de pane dentro de Zellij:** un split (`Alt-n`) es un shell **local**, no SSH —
+  zellij-switch no puede fijar el `default_shell` de la sesión como sí hace el CLI de fuera. Para
+  otro shell remoto abre un **tab** (`Alt-t`), que sí entra al host (vía `new_tab_template`).
 - **Opciones por-host** (usuario, puerto, `-A` para reenviar el agente) → `~/.ssh/config`, no en `zjssh`.
 - **Eficiencia:** N tabs = N conexiones. Para compartir una sola, en `~/.ssh/config`:
   ```
@@ -106,8 +116,9 @@ shell. `default_shell` sólo acepta un binario (no `ssh host` con args), de ahí
     ControlPath ~/.ssh/cm-%C
     ControlPersist 10m
   ```
-- **Serialización:** el `default_shell` de la sesión queda "horneado" al crearla; para cambiarlo,
-  borra la sesión (`zellij delete-session ssh_<host>`) o `./bootstrap.sh --clean`.
+- **Serialización:** el layout con que se creó la sesión queda "horneado"; para cambiarlo, borra la
+  sesión (`zellij delete-session ssh_<host>`) o `./bootstrap.sh --clean`. Los panes con `command`
+  del layout `ssh` pueden pedir confirmación al resucitar una sesión serializada (como el layout `dev`).
 
 ## Dependencias
 

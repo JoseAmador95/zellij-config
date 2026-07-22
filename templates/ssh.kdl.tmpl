@@ -1,0 +1,94 @@
+// ════════════════════════════════════════════════════════════════════════
+//  Layout "ssh" — sesión dedicada a un host SSH. Lo usa `zjssh` (shell/functions.sh)
+//  cuando lo lanzas DESDE DENTRO de Zellij: cambia de sesión vía zellij-switch
+//  (sin anidar, igual que zjcwd) → este layout hornea el SSH.
+//
+//  ¿Por qué un layout y no `--default-shell` como el `zjssh` de FUERA de Zellij?
+//  zellij-switch (el plugin que evita el nesting) sólo acepta --session/--cwd/--layout;
+//  NO puede fijar el `default_shell` de la sesión ni pasar env. Así que el SSH va en el
+//  layout: cada pane "de contenido" corre scripts/ssh-host.sh, que hace `exec ssh <host>`.
+//  El host lo resuelve ssh-host.sh: fuera vía $ZJ_SSH_HOST; por el plugin (sin env) lo
+//  DERIVA del nombre de sesión `ssh_<host>` → usa alias de ~/.ssh/config (para user@host,
+//  ponlo como Host en ~/.ssh/config). ssh-host.sh se auto-blinda: sólo hace SSH si la
+//  sesión se llama ssh_<host>.
+//
+//  new_tab_template: los tabs NUEVOS (Alt-t) también entran al host (no sólo el inicial).
+//  Los SPLITS de pane (Alt-n), en cambio, usan el default_shell de la sesión = shell LOCAL:
+//  zellij-switch no puede fijarlo a ssh-host.sh como sí hace el CLI. Para otro shell remoto,
+//  abre un TAB (Alt-t), no un split. (El `zjssh` de fuera sí usa --default-shell, así que
+//  allí también los splits entran al host.)
+//
+//  Barra igual que main/dev (zjstatus). Zellij no tiene import entre layouts; el bloque
+//  zjstatus está duplicado a propósito (default_tab_template + new_tab_template). Si cambias
+//  la barra en main.kdl, replica los DOS bloques de aquí.
+// ════════════════════════════════════════════════════════════════════════
+
+layout {
+    // Tab inicial (y cualquier tab del propio layout): barra + contenido (children).
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="file:__HOME__/.config/zellij/plugins/zjstatus.wasm" {
+                format_left  "{mode} {command_host} #[bg=#8E24AA,fg=#FFFFFF,bold]  📁 {session}  #[default] {tabs}"
+                format_right ""
+                format_space ""
+
+                // hostname — pastilla con color/emoji determinista por hostname (hash)
+                command_host_command    "sh __HOME__/.config/zellij/scripts/hostname-color.sh"
+                command_host_format     "{stdout}"
+                command_host_interval   "10"
+                command_host_rendermode "dynamic"
+                // nombre de sesión: widget nativo {session} con estilo FIJO (morado + 📁).
+
+                mode_normal  "#[bg=#007ACC,fg=#FFFFFF,bold] NORMAL "
+                mode_locked  "#[bg=#E8E8E8,fg=#343434,bold] LOCKED "
+                mode_pane    "#[bg=#007ACC,fg=#FFFFFF,bold] PANE "
+                mode_tab     "#[bg=#007ACC,fg=#FFFFFF,bold] TAB "
+                mode_resize  "#[bg=#007ACC,fg=#FFFFFF,bold] RESIZE "
+                mode_scroll  "#[bg=#007ACC,fg=#FFFFFF,bold] SCROLL "
+                mode_session "#[bg=#007ACC,fg=#FFFFFF,bold] SESSION "
+                mode_move    "#[bg=#007ACC,fg=#FFFFFF,bold] MOVE "
+
+                tab_normal   "#[fg=#343434] {index}·{name} "
+                tab_active   "#[fg=#007ACC,bold] {index}·{name} "
+            }
+        }
+        children
+    }
+
+    // Tabs NUEVOS (Alt-t): barra + un pane que entra al host por SSH (mismo ssh-host.sh).
+    // Sin `children`: el tab queda totalmente definido (barra + ssh), sin pane local extra.
+    new_tab_template {
+        pane size=1 borderless=true {
+            plugin location="file:__HOME__/.config/zellij/plugins/zjstatus.wasm" {
+                format_left  "{mode} {command_host} #[bg=#8E24AA,fg=#FFFFFF,bold]  📁 {session}  #[default] {tabs}"
+                format_right ""
+                format_space ""
+
+                command_host_command    "sh __HOME__/.config/zellij/scripts/hostname-color.sh"
+                command_host_format     "{stdout}"
+                command_host_interval   "10"
+                command_host_rendermode "dynamic"
+
+                mode_normal  "#[bg=#007ACC,fg=#FFFFFF,bold] NORMAL "
+                mode_locked  "#[bg=#E8E8E8,fg=#343434,bold] LOCKED "
+                mode_pane    "#[bg=#007ACC,fg=#FFFFFF,bold] PANE "
+                mode_tab     "#[bg=#007ACC,fg=#FFFFFF,bold] TAB "
+                mode_resize  "#[bg=#007ACC,fg=#FFFFFF,bold] RESIZE "
+                mode_scroll  "#[bg=#007ACC,fg=#FFFFFF,bold] SCROLL "
+                mode_session "#[bg=#007ACC,fg=#FFFFFF,bold] SESSION "
+                mode_move    "#[bg=#007ACC,fg=#FFFFFF,bold] MOVE "
+
+                tab_normal   "#[fg=#343434] {index}·{name} "
+                tab_active   "#[fg=#007ACC,bold] {index}·{name} "
+            }
+        }
+        pane command="sh" name="ssh" {
+            args "__HOME__/.config/zellij/scripts/ssh-host.sh"
+        }
+    }
+
+    // Contenido del tab inicial: entra al host por SSH (se inyecta en `children`).
+    pane command="sh" name="ssh" {
+        args "__HOME__/.config/zellij/scripts/ssh-host.sh"
+    }
+}
