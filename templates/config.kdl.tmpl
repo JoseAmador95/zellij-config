@@ -69,6 +69,25 @@ keybinds {
             }
             SwitchToMode "Locked"
         }
+        // Saltar directo a la sesión ANTERIOR / SIGUIENTE sin abrir el gestor (cicla las
+        // sesiones vivas, con wrap-around). Zellij no tiene acción nativa de "sesión
+        // siguiente/anterior": un script calcula el destino y cambia vía zellij-switch
+        // (igual que zjcwd), corriendo en un pane flotante efímero que se autocierra.
+        // Nota: pisa el Alt-[ / Alt-] heredado (swap-layout anterior/siguiente).
+        bind "Alt [" {
+            Run "sh" "__HOME__/.config/zellij/scripts/session-cycle.sh" "prev" {
+                floating true
+                close_on_exit true
+                name "session-cycle"
+            }
+        }
+        bind "Alt ]" {
+            Run "sh" "__HOME__/.config/zellij/scripts/session-cycle.sh" "next" {
+                floating true
+                close_on_exit true
+                name "session-cycle"
+            }
+        }
         // Command palette (estilo VSCode): fuzzy sobre acciones de Zellij
         bind "Alt Space" {
             LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-palette.wasm" {

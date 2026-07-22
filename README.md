@@ -60,6 +60,7 @@ Ctrl-a        despertar Zellij (→ Normal) · Ctrl-a Ctrl-a → Locked
 Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
 Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
+Alt-[ Alt-]   sesión anterior/siguiente    Alt-t   tab nuevo
 ```
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
 
@@ -161,4 +162,9 @@ Añádelas a mano en cada máquina:
   determinista por hash (mismo nombre → mismo look), vía `scripts/hostname-color.sh`. El nombre
   de **sesión** usa un estilo fijo (morado + 📁): zjstatus no puede pasar `{session}` a un
   command widget, así que su color no puede ser por-hash como el del host.
+- **Cambiar de sesión:** `Alt-s` abre el session-manager (la "lista/dropdown" de sesiones), que se
+  **navega y elige con el ratón**. `Alt-[` / `Alt-]` saltan directo a la sesión anterior/siguiente sin
+  abrir nada, vía `scripts/session-cycle.sh` (calcula el destino y cambia con zellij-switch, sin anidar).
+  Ojo: el nombre en la barra **no** es clickable — zjstatus sólo captura clics del ratón en las pestañas
+  (`{tabs}`), no en `{session}`; por eso el disparador del selector es el teclado (`Alt-s`), no el clic.
 - `config.kdl.verbose.bak` / `config.kdl.bak` son respaldos locales (ignorados por git).
