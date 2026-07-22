@@ -16,13 +16,15 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 
 `bootstrap.sh` (idempotente, POSIX sh) hace:
 1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl`, `layouts/ssh.kdl` y
-   `permissions.kdl` desde `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real.
+   `permissions.kdl` desde `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real y
+   `__SHELL__` por el shell del host (`default_shell` de Zellij).
    Necesario porque **Zellij no expande `~`/`$HOME`** en rutas de plugin.
 2. Descarga los plugins `.wasm` a versión fija (aborta si alguno no baja/valida).
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
    Linux `~/.cache/zellij/`) para evitar los prompts de permiso.
-5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`, `zjssh`) en tu `~/.zshrc` (o `~/.config/sh/rc.sh`).
+5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`, `zjssh`) en el rc del shell del host:
+   `~/.bashrc` o `~/.zshrc` según `$SHELL` (o `~/.config/sh/rc.sh` si existe).
 
 **Reinstall limpio:** `./bootstrap.sh --clean` re-baja los plugins, regenera los `.kdl` y **borra las
 sesiones serializadas**. Úsalo cuando cambies un layout y no se refleje: con `session_serialization`
@@ -123,7 +125,7 @@ abre un shell local. El remoto **no** corre Zellij (aquí sólo el cliente) → 
 
 ## Dependencias
 
-`zellij` (0.44+), `curl`, `sed`, `cksum`, `hostname`, `zsh`. En macOS via Homebrew;
+`zellij` (0.44+), `curl`, `sed`, `cksum`, `hostname`, y `zsh` o `bash` (el shell del host). En macOS via Homebrew;
 los plugins requieren Zellij ≥ 0.44.
 
 ## Piezas externas (NO viven en este repo)

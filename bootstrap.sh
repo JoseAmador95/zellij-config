@@ -45,8 +45,24 @@ if [ "$CLEAN" = 1 ]; then
   info ".kdl generados y plugins/*.wasm borrados (se recrean abajo)"
 fi
 
-# --- 1) materializar plantillas (__HOME__ -> $HOME) --------------------------
-gen() { mkdir -p "$(dirname "$2")"; sed "s|__HOME__|$HOME|g" "$1" > "$2"; }
+# --- 0b) detectar el shell del host -----------------------------------------
+# $SHELL es el shell de LOGIN del host: es el que abre tus terminales (su rc es el
+# que hay que cablear en §5) y el que Zellij debe lanzar en cada pane (default_shell
+# de config.kdl). Un solo dato, dos usos → lo detectamos una vez aquí. Reconocemos
+# zsh y bash; si $SHELL falta o es raro, caemos al rc/binario que exista (prioriza
+# zsh, que era el comportamiento previo).
+case "${SHELL:-}" in
+  *zsh)  HOST_SHELL=zsh ;;
+  *bash) HOST_SHELL=bash ;;
+  *)
+    if   [ -f "$HOME/.zshrc"  ] || command -v zsh  >/dev/null 2>&1; then HOST_SHELL=zsh
+    elif [ -f "$HOME/.bashrc" ] || command -v bash >/dev/null 2>&1; then HOST_SHELL=bash
+    else HOST_SHELL=zsh; fi ;;
+esac
+info "shell del host: $HOST_SHELL (\$SHELL=${SHELL:-vacío})"
+
+# --- 1) materializar plantillas (__HOME__ -> $HOME, __SHELL__ -> shell) -------
+gen() { mkdir -p "$(dirname "$2")"; sed -e "s|__HOME__|$HOME|g" -e "s|__SHELL__|$HOST_SHELL|g" "$1" > "$2"; }
 gen templates/config.kdl.tmpl      config.kdl
 gen templates/main.kdl.tmpl        layouts/main.kdl
 gen templates/dev.kdl.tmpl         layouts/dev.kdl
@@ -113,8 +129,11 @@ if [ "$CLEAN" = 1 ] && command -v zellij >/dev/null 2>&1; then
 fi
 
 # --- 5) sourcear las funciones de shell (zj, zjcwd) en el rc (idempotente) ----
-RC="$HOME/.zshrc"
-if [ -f "$HOME/.config/sh/rc.sh" ]; then RC="$HOME/.config/sh/rc.sh"; fi
+# rc común (bash+zsh) si existe; si no, el rc propio del shell detectado del host.
+if   [ -f "$HOME/.config/sh/rc.sh" ]; then RC="$HOME/.config/sh/rc.sh"
+elif [ "$HOST_SHELL" = bash ];        then RC="$HOME/.bashrc"
+else                                       RC="$HOME/.zshrc"
+fi
 if grep -qF '# >>> zj-functions >>>' "$RC" 2>/dev/null; then
   info "funciones de shell ya sourced en $RC"
 else
