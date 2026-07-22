@@ -17,14 +17,16 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 `bootstrap.sh` (idempotente, POSIX sh) hace:
 1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl`, `layouts/ssh.kdl` y
    `permissions.kdl` desde `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real y
-   `__SHELL__` por el shell del host (`default_shell` de Zellij).
-   Necesario porque **Zellij no expande `~`/`$HOME`** en rutas de plugin.
+   `__DEFAULT_SHELL__` por la **ruta absoluta** del shell que Zellij lanzará (`default_shell`),
+   resuelta por prioridad `$ZELLIJ_DEFAULT_SHELL` › `$SHELL` › `bash` (p.ej. en un despliegue sin
+   `$SHELL` fiable: `ZELLIJ_DEFAULT_SHELL=/bin/bash ./bootstrap.sh`).
+   Necesario porque **Zellij no expande `~`/`$HOME`/`$PATH`** en esas rutas.
 2. Descarga los plugins `.wasm` a versión fija (aborta si alguno no baja/valida).
 3. `chmod +x` a los scripts de la barra.
 4. Siembra los permisos de plugin en la caché del SO (macOS `~/Library/Caches/...`,
    Linux `~/.cache/zellij/`) para evitar los prompts de permiso.
-5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`, `zjssh`) en el rc del shell del host:
-   `~/.bashrc` o `~/.zshrc` según `$SHELL` (o `~/.config/sh/rc.sh` si existe).
+5. Cablea las funciones de shell (`zj`, `zjcwd`, `agent`, `zjssh`) en el rc de la familia del
+   shell resuelto: `~/.bashrc` o `~/.zshrc` (o `~/.config/sh/rc.sh` si existe).
 
 **Reinstall limpio:** `./bootstrap.sh --clean` re-baja los plugins, regenera los `.kdl` y **borra las
 sesiones serializadas**. Úsalo cuando cambies un layout y no se refleje: con `session_serialization`
@@ -41,8 +43,9 @@ $EDITOR templates/config.kdl.tmpl     # (o main.kdl.tmpl / dev.kdl.tmpl / permis
 ./bootstrap.sh                        # regenera los archivos reales
 ```
 
-Usa `__HOME__` donde vaya una ruta bajo tu home. Los `scripts/*.sh` no llevan rutas absolutas
-(usan `hostname` / `$ZELLIJ_SESSION_NAME`), así que se editan directo.
+Usa `__HOME__` donde vaya una ruta bajo tu home (y `__DEFAULT_SHELL__` para la ruta del shell).
+Los `scripts/*.sh` no llevan rutas absolutas (usan `hostname` / `$ZELLIJ_SESSION_NAME`), así que
+se editan directo.
 
 ## Plugins (versiones fijas)
 

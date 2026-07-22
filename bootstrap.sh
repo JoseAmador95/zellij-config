@@ -45,21 +45,38 @@ if [ "$CLEAN" = 1 ]; then
   info ".kdl generados y plugins/*.wasm borrados (se recrean abajo)"
 fi
 
-# --- 0b) detectar el shell del host -----------------------------------------
-# $SHELL es el shell de LOGIN del host: es el que abre tus terminales (su rc es el
-# que hay que cablear en §5) y el que Zellij debe lanzar en cada pane (default_shell
-# de config.kdl). Un solo dato, dos usos → lo detectamos una vez aquí. Reconocemos
-# zsh y bash; si $SHELL falta o es raro, caemos a bash: es el más seguro (casi
-# siempre instalado, a diferencia de zsh, que puede no estarlo).
-case "${SHELL:-}" in
-  *zsh)  HOST_SHELL=zsh ;;
-  *bash) HOST_SHELL=bash ;;
-  *)     HOST_SHELL=bash ;;
-esac
-info "shell del host: $HOST_SHELL (\$SHELL=${SHELL:-vacío})"
+# --- 0b) resolver el shell que Zellij lanzará (default_shell) -----------------
+# Un dato con dos usos: (a) el binario que Zellij abre en cada pane (default_shell de
+# config.kdl) y (b) qué rc cablear en §5. Prioridad:
+#   1) $ZELLIJ_DEFAULT_SHELL  override explícito (p.ej. un despliegue Ansible/appliance
+#                             fuerza /bin/bash aunque $SHELL diga otra cosa)
+#   2) $SHELL                 shell de login del host (lo normal en una máquina personal)
+#   3) bash                   fallback: el más seguro (casi siempre presente; zsh puede faltar)
+# Lo resolvemos a RUTA ABSOLUTA: Zellij lanza default_shell sin garantía del PATH del
+# server, y este bootstrap ya materializa rutas absolutas por lo mismo (plugins, $HOME).
+resolve_shell() {  # $1 = preferencia (ruta o nombre, puede venir vacía) → imprime ruta abs.
+  _s="$1"
+  case "$_s" in
+    /*) if [ -x "$_s" ]; then printf '%s\n' "$_s"; return 0; fi ;;
+    ?*) _p=$(command -v "$_s" 2>/dev/null || true)
+        if [ -n "$_p" ]; then printf '%s\n' "$_p"; return 0; fi ;;
+  esac
+  _p=$(command -v bash 2>/dev/null || true)
+  [ -n "$_p" ] || _p=$(command -v sh 2>/dev/null || true)
+  [ -n "$_p" ] || _p=/bin/bash
+  printf '%s\n' "$_p"
+}
+DEFAULT_SHELL=$(resolve_shell "${ZELLIJ_DEFAULT_SHELL:-${SHELL:-}}")
 
-# --- 1) materializar plantillas (__HOME__ -> $HOME, __SHELL__ -> shell) -------
-gen() { mkdir -p "$(dirname "$2")"; sed -e "s|__HOME__|$HOME|g" -e "s|__SHELL__|$HOST_SHELL|g" "$1" > "$2"; }
+# Familia (para elegir el rc en §5): zsh si el binario es zsh; cualquier otro → bash.
+case "$DEFAULT_SHELL" in
+  *zsh) HOST_SHELL=zsh ;;
+  *)    HOST_SHELL=bash ;;
+esac
+info "default_shell → $DEFAULT_SHELL  (familia $HOST_SHELL; ZELLIJ_DEFAULT_SHELL=${ZELLIJ_DEFAULT_SHELL:-∅}, \$SHELL=${SHELL:-∅})"
+
+# --- 1) materializar plantillas (__HOME__ -> $HOME, __DEFAULT_SHELL__ -> ruta del shell) -------
+gen() { mkdir -p "$(dirname "$2")"; sed -e "s|__HOME__|$HOME|g" -e "s|__DEFAULT_SHELL__|$DEFAULT_SHELL|g" "$1" > "$2"; }
 gen templates/config.kdl.tmpl      config.kdl
 gen templates/main.kdl.tmpl        layouts/main.kdl
 gen templates/dev.kdl.tmpl         layouts/dev.kdl
