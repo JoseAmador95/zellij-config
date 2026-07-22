@@ -49,15 +49,12 @@ fi
 # $SHELL es el shell de LOGIN del host: es el que abre tus terminales (su rc es el
 # que hay que cablear en §5) y el que Zellij debe lanzar en cada pane (default_shell
 # de config.kdl). Un solo dato, dos usos → lo detectamos una vez aquí. Reconocemos
-# zsh y bash; si $SHELL falta o es raro, caemos al rc/binario que exista (prioriza
-# zsh, que era el comportamiento previo).
+# zsh y bash; si $SHELL falta o es raro, caemos a bash: es el más seguro (casi
+# siempre instalado, a diferencia de zsh, que puede no estarlo).
 case "${SHELL:-}" in
   *zsh)  HOST_SHELL=zsh ;;
   *bash) HOST_SHELL=bash ;;
-  *)
-    if   [ -f "$HOME/.zshrc"  ] || command -v zsh  >/dev/null 2>&1; then HOST_SHELL=zsh
-    elif [ -f "$HOME/.bashrc" ] || command -v bash >/dev/null 2>&1; then HOST_SHELL=bash
-    else HOST_SHELL=zsh; fi ;;
+  *)     HOST_SHELL=bash ;;
 esac
 info "shell del host: $HOST_SHELL (\$SHELL=${SHELL:-vacío})"
 
