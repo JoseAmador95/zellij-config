@@ -7,7 +7,17 @@
 
 # zj — abrir (adjuntar o crear) la sesión "main" con nuestro layout. Comando principal.
 # `zj` → sesión "main"; `zj foo` → sesión "foo". Sin `&& exit`: al salir vuelves al shell.
-zj() { zellij attach -c "${1:-main}" options --default-layout main; }
+# "main" se crea SIN serialización (--session-serialization false): evita resucitar paneles
+# zombi (p.ej. un `pane edit`/nvim que quede pegado y reviva en cada attach). Las demás
+# sesiones respetan la config global (session_serialization true) y siguen sobreviviendo.
+zj() {
+  local s="${1:-main}"
+  if [ "$s" = main ]; then
+    zellij attach -c "$s" options --default-layout main --session-serialization false
+  else
+    zellij attach -c "$s" options --default-layout main
+  fi
+}
 
 # agent — lanza el agente de IA de ESTE host (claude/codex/…). Mismo resolvedor que usa el
 # layout `dev`. Config por-host: `export ZJ_AGENT=<cmd>` o `echo <cmd> > ~/.config/zellij/agent.local`.
