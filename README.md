@@ -15,6 +15,7 @@ git clone git@github.com:JoseAmador95/zellij-config.git ~/.config/zellij && cd ~
 > `https://github.com/JoseAmador95/zellij-config.git`.
 
 `bootstrap.sh` (idempotente, POSIX sh) hace:
+
 1. Genera `config.kdl`, `layouts/main.kdl`, `layouts/dev.kdl`, `layouts/ssh.kdl` y
    `permissions.kdl` desde `templates/*.tmpl`, sustituyendo `__HOME__` por tu `$HOME` real y
    `__DEFAULT_SHELL__` por la **ruta absoluta** del shell que Zellij lanzará (`default_shell`),
@@ -49,12 +50,12 @@ se editan directo.
 
 ## Plugins (versiones fijas)
 
-| Plugin | Repo | Tag | Para qué |
-|---|---|---|---|
-| zjstatus | dj95/zjstatus | v0.24.0 | barra superior (modo, host, sesión, tabs) |
-| zj-which-key | johnae/zj-which-key | v0.2.0 | hints de mappings (auto + `Alt-/` browser) |
-| zellij-palette | timonwong/zellij-palette | v0.2.2 | `Alt-space` — command palette |
-| zellij-switch | mostafaqanbaryan/zellij-switch | 0.2.1 | cambiar/crear sesión desde dentro sin anidar (usado por `zjcwd` y `zjssh`) |
+| Plugin         | Repo                           | Tag     | Para qué                                                                   |
+| -------------- | ------------------------------ | ------- | -------------------------------------------------------------------------- |
+| zjstatus       | dj95/zjstatus                  | v0.24.0 | barra superior (modo, host, sesión, tabs)                                  |
+| zj-which-key   | johnae/zj-which-key            | v0.2.0  | hints de mappings (auto + `Alt-/` browser)                                 |
+| zellij-palette | timonwong/zellij-palette       | v0.2.2  | `Alt-space` — command palette                                              |
+| zellij-switch  | mostafaqanbaryan/zellij-switch | 0.2.1   | cambiar/crear sesión desde dentro sin anidar (usado por `zjcwd` y `zjssh`) |
 
 Para actualizar un plugin: cambia su `tag` en el manifest dentro de `bootstrap.sh` y re-ejecuta.
 
@@ -65,14 +66,20 @@ Ctrl-a        despertar Zellij (→ Normal) · Ctrl-a Ctrl-a → Locked
 Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
 Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
-Alt-[ Alt-]   sesión anterior/siguiente    Alt-t   tab nuevo
+Alt-, Alt-.   sesión anterior/siguiente    Alt-t   tab nuevo
+Alt-e         scrollback del pane en nvim
 ```
+
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
+Además, tras `Ctrl-a`: **`1`…`9`** salta a la sesión N de la barra, y **`y`** copia todo el
+scrollback del pane al portapapeles.
 
 **Zellij es opt-in** (no auto-arranca). **Funciones de shell** (`shell/functions.sh`, sourced
 automáticamente por `bootstrap.sh`):
+
 - `zj` — abrir/entrar a la sesión `main` (adjunta o crea, con el layout). `zj foo` → sesión `foo`.
 - `zjcwd` — crea/salta a una sesión rooteada en el directorio actual.
+- `zjcopy` — copia TODO el scrollback del pane actual al portapapeles (atajo: `Ctrl-a y`).
 - `agent` — lanza el agente de IA de ESTE host (ver abajo).
 - `zjssh <host>` — sesión dedicada a un host SSH; cada tab nuevo entra al host, sin anidar (ver abajo).
 
@@ -100,6 +107,7 @@ entra solo por SSH** — no un shell local. Útil para trabajar en un remoto con
 teclear `ssh` cada vez. `exit` cierra el tab como un shell normal.
 
 **Sin anidar (igual que `zjcwd`):** `zjssh` no arranca un cliente Zellij dentro de otro.
+
 - **Dentro de Zellij** cambia de sesión con el plugin **zellij-switch** (como `zjcwd`). El plugin
   sólo pasa `--session`/`--layout` (no env ni `default_shell`), así que el SSH lo hornea el
   **layout `ssh`**: sus panes corren `scripts/ssh-host.sh`, que hace `exec ssh <host>`. Sin
@@ -142,6 +150,7 @@ Añádelas a mano en cada máquina:
 - **SSH agent forwarding estable** — si entras con `ssh -A` a un host que corre Zellij, el
   socket del agente forwardeado cambia en cada conexión y Zellij persiste los paneles con el
   socket viejo (muerto) → "no hay llaves". Fíjalo a una ruta estable en `~/.config/sh/rc.sh`:
+
   ```sh
   if [ -n "$SSH_CONNECTION" ]; then
     if [ -S "$SSH_AUTH_SOCK" ] && [ "$SSH_AUTH_SOCK" != "$HOME/.ssh/agent.sock" ]; then
@@ -150,6 +159,7 @@ Añádelas a mano en cada máquina:
     [ -S "$HOME/.ssh/agent.sock" ] && export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"
   fi
   ```
+
   El symlink `~/.ssh/agent.sock` se re-apunta en cada login → los paneles (que guardan esa
   ruta fija) se auto-curan al reconectar. Paneles ya abiertos: una vez
   `export SSH_AUTH_SOCK="$HOME/.ssh/agent.sock"`. Hay que ponerlo en cada host al que entres
@@ -163,13 +173,50 @@ Añádelas a mano en cada máquina:
 
 ## Notas
 
-- La barra muestra `[MODO] [🦀 host] [📁 sesión] [tabs]`. El **host** lleva color+emoji
+- La barra muestra `[MODO] [🦀 host] [📁 sesión] [tabs] … [sesiones]`. El **host** lleva color+emoji
   determinista por hash (mismo nombre → mismo look), vía `scripts/hostname-color.sh`. El nombre
   de **sesión** usa un estilo fijo (morado + 📁): zjstatus no puede pasar `{session}` a un
   command widget, así que su color no puede ser por-hash como el del host.
-- **Cambiar de sesión:** `Alt-s` abre el session-manager (la "lista/dropdown" de sesiones), que se
-  **navega y elige con el ratón**. `Alt-[` / `Alt-]` saltan directo a la sesión anterior/siguiente sin
-  abrir nada, vía `scripts/session-cycle.sh` (calcula el destino y cambia con zellij-switch, sin anidar).
-  Ojo: el nombre en la barra **no** es clickable — zjstatus sólo captura clics del ratón en las pestañas
-  (`{tabs}`), no en `{session}`; por eso el disparador del selector es el teclado (`Alt-s`), no el clic.
+
+### Barra de sesiones (derecha)
+
+`format_right` lista las **sesiones vivas numeradas**, con la actual resaltada, vía
+`scripts/session-bar.sh` (mismo patrón de command widget que el hostname). Con una sola sesión no
+imprime nada, para no duplicar la pastilla `📁 sesión` de la izquierda.
+
+El **orden lo fija `scripts/session-list.sh`** (alfabético), y es el mismo que usan el salto por
+índice y el ciclo — por eso el número que ves es el que funciona:
+
+- `Ctrl-a` + `1`…`9` → ir a esa sesión (`scripts/session-goto.sh`).
+- `Alt-,` / `Alt-.` → sesión anterior / siguiente con wrap-around (`scripts/session-cycle.sh`).
+- `Alt-s` → session-manager, que se navega y elige con el ratón.
+- **Clic sobre la lista** → abre el session-manager. zjstatus sí captura clics en los command
+  widgets (`command_sessions_clickaction`), pero admite **una sola** acción por widget, así que no
+  puede saltar a la sesión concreta que clicaste.
+
+**`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** No era un problema de la
+config: con "meta sends escape", `Alt+[` se transmite como `ESC [` — que **es** el introductor
+CSI — y `Alt+]` como `ESC ]`, el introductor **OSC**. Ninguna terminal puede distinguirlos de una
+secuencia de escape real; termwiz (el parser de entrada de Zellij) sólo desambigua cuando el búfer
+de entrada llega completo, así que degrada justo por SSH y con pulsaciones rápidas. Lo dice el
+propio mantenedor de Zellij al arreglarlo a medias en
+[wezterm#3009](https://github.com/wezterm/wezterm/pull/3009): _"this ambiguity of `ESC` + `[` vs.
+`Alt-[` is something we have to live with"_. No merece la pena reintentarlo.
+
+### Scrollback
+
+- **`Ctrl-a y`** (o `zjcopy`) copia **todo** el scrollback del pane al portapapeles. Por SSH usa
+  OSC52 para llegar a tu portapapeles local; en local prefiere `pbcopy`/`wl-copy`/`xclip`, porque
+  los terminales truncan OSC52 a partir de ~100 KB y un scrollback largo se pasa de sobra.
+  El atajo **escribe ` zjcopy` en el pane** en vez de lanzar un pane aparte: la acción `Run` abre
+  un pane nuevo que roba el foco (y `dump-screen` volcaría ese), y la acción `DumpScreen` sólo da
+  el viewport porque lleva `include_scrollback: false` hardcodeado. Por eso vive en Normal (tras
+  `Ctrl-a`) y no en `shared`: sobre un pane con una TUI sólo tecleraría texto.
+- **`Alt-e`** abre el scrollback en nvim desde cualquier modo (antes: `Ctrl-a` `s` `e`). Zellij lo
+  abre **ya posicionado al final del último comando** — pasa `+<línea del cursor>` en el argv del
+  editor — así que desde ahí seleccionas con vim-motions normales. Zellij deja el volcado en
+  `$TMPDIR/<uuid>.dump` y **no lo borra**, así que esos archivos se acumulan en `/tmp`.
+- Tanto `Alt-e` como la `e` del modo Scroll dejan Zellij en **Locked**, no en Normal.
+  `EditScrollback` no cambia de modo por sí solo y el default de Zellij lo pone en Normal, donde
+  Zellij se queda con `Ctrl-p/n/t/s/o/h` y el editor se siente muerto.
 - `config.kdl.verbose.bak` / `config.kdl.bak` son respaldos locales (ignorados por git).
