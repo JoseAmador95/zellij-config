@@ -202,31 +202,33 @@ Añádelas a mano en cada máquina:
 
 ### Sesiones
 
-**Cambiar de sesión: `Alt-s`** (session-manager, navegable y clicable). Es el único camino.
+`format_right` lista las **sesiones vivas numeradas**, con la actual resaltada. Con una sola
+sesión no imprime nada, para no duplicar la pastilla `📁 sesión` de la izquierda.
 
-> **No hay atajos de "sesión anterior/siguiente" ni "ir a la sesión N", ni barra de sesiones.**
-> Los tres intentos chocan con el mismo muro: para hacer cualquiera de ellos hay que ejecutar un
-> comando, y **las dos formas que Zellij ofrece para eso tienen fuga de descriptores**.
->
-> 1. **Acción `Run` desde un keybind** (para "sesión siguiente" / "ir a la N"). Abre un pane
->    flotante que corre el script y debería cerrarse con `close_on_exit true`. En la práctica el
->    float **se queda en blanco y no se cierra**: cada pulsación deja un pane vivo con su pty y su
->    conexión al servidor.
-> 2. **Command widget de zjstatus** (para la barra). Vive en `default_tab_template`, o sea una
->    instancia **por tab**, y cada refresco lanza `zellij list-sessions` — un _cliente_ que abre
->    sockets contra el servidor, lanzado por el propio servidor.
->
-> Ambas acaban igual:
-> `Thread 'server_listener' panicked … Os { code: 24, message: "Too many open files" }`.
-> Subir `ulimit -n` sólo retrasa el panic; no lo evita.
->
-> El mecanismo (1) ya estaba en `Alt-[` / `Alt-]` desde antes. Como esas teclas casi nunca
-> llegaban a dispararse (ver abajo), la fuga estaba **dormida**; al rebindearlas a teclas que sí
-> funcionan (`Alt-,` / `Alt-.`) se despertó, y por eso se han retirado también.
->
-> `scripts/session-list.sh`, `session-cycle.sh` y `session-goto.sh` **siguen en el repo pero sin
-> bindear**: la lógica es correcta y se pueden ejecutar a mano. Lo que falta es una forma de
-> lanzarlos que no deje un pane vivo detrás.
+**Cambiar de sesión: `Alt-s`** (session-manager), o **clic sobre la lista**, que abre el mismo
+selector. zjstatus admite una sola `clickaction` por widget, así que el clic no puede saltar a la
+sesión concreta que pulsaste.
+
+`scripts/session-bar.sh` **lee el directorio de sockets de Zellij**, no llama a
+`zellij list-sessions`. Es deliberado y es la lección de un fallo: el widget vive en
+`default_tab_template`, o sea que corre **una vez por tab** y por intervalo, y `list-sessions` es
+un *cliente* que abre sockets contra el servidor. Un socket por sesión viva; las salidas limpias
+borran el suyo y las sesiones EXITED no tienen (viven serializadas en la caché), así que la lista
+sale correcta sola. Un crash puede dejar un socket huérfano → una sesión fantasma, nunca un fallo.
+
+Para depurar qué ve el script:
+
+```sh
+sh ~/.config/zellij/scripts/session-bar.sh -v
+```
+
+> **No hay atajos de "sesión anterior/siguiente" ni "ir a la sesión N".** Se hicieron con la
+> acción `Run`, que abre un pane flotante para correr el script y debería cerrarse con
+> `close_on_exit true`. En la práctica el float **se queda en blanco y no se cierra**, y cada
+> pulsación deja un pane vivo con su pty. El mecanismo venía de `Alt-[` / `Alt-]`; como esas
+> teclas casi nunca se disparaban, el problema estaba dormido.
+> `scripts/session-list.sh`, `session-cycle.sh` y `session-goto.sh` siguen en el repo **sin
+> bindear**: la lógica es correcta, falta una forma de lanzarlos que no deje un pane detrás.
 
 **`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** Con "meta sends escape",
 `Alt+[` se transmite como `ESC [` — que **es** el introductor CSI — y `Alt+]` como `ESC ]`, el
