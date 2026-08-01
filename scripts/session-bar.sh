@@ -76,12 +76,15 @@ out=""
 OLDIFS=$IFS
 IFS='
 '
+# Las llaves de ${i} NO son cosmética: el separador `·` es multibyte (0xC2 0xB7) y el
+# /bin/sh de macOS (bash 3.2) lo acepta como parte del NOMBRE de la variable, así que `$i·`
+# se interpreta como la variable `i·` → "unbound variable" con set -u.
 for s in $sessions; do
   i=$((i + 1))
   if [ "$s" = "$cur" ]; then
-    out="$out#[bg=#007ACC,fg=#FFFFFF,bold] $i·$s #[default]"
+    out="$out#[bg=#007ACC,fg=#FFFFFF,bold] ${i}·${s} #[default]"
   else
-    out="$out#[fg=#343434] $i·$s #[default]"
+    out="$out#[fg=#343434] ${i}·${s} #[default]"
   fi
 done
 IFS=$OLDIFS
