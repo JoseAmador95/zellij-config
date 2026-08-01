@@ -66,12 +66,11 @@ Ctrl-a        despertar Zellij (→ Normal) · Ctrl-a Ctrl-a → Locked
 Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
 Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
-Alt-, Alt-.   sesión anterior/siguiente    Alt-t   tab nuevo
+Alt-t         tab nuevo
 ```
 
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
-Además, tras `Ctrl-a`: **`1`…`9`** salta a la sesión N (orden de `scripts/session-list.sh`), y
-**`y`** copia todo el scrollback del pane al portapapeles.
+Además, tras `Ctrl-a`, **`y`** copia todo el scrollback del pane al portapapeles.
 
 **Zellij es opt-in** (no auto-arranca). **Funciones de shell** (`shell/functions.sh`, sourced
 automáticamente por `bootstrap.sh`):
@@ -179,31 +178,39 @@ Añádelas a mano en cada máquina:
 
 ### Sesiones
 
-El **orden canónico lo fija `scripts/session-list.sh`** (alfabético), y es el que usan tanto el
-salto por índice como el ciclo, así que ambos coinciden:
+**Cambiar de sesión: `Alt-s`** (session-manager, navegable y clicable). Es el único camino.
 
-- `Ctrl-a` + `1`…`9` → ir a esa sesión (`scripts/session-goto.sh`).
-- `Alt-,` / `Alt-.` → sesión anterior / siguiente con wrap-around (`scripts/session-cycle.sh`).
-- `Alt-s` → session-manager, que se navega y elige con el ratón.
-
-> **Por qué NO hay una barra de sesiones permanente.** Se intentó con un command widget de
-> zjstatus (`format_right`) y **tumba el servidor de Zellij**: el widget vive en
-> `default_tab_template`, o sea una instancia de zjstatus **por tab**, y cada refresco lanza
-> `zellij list-sessions`, que es un _cliente_ que abre sockets contra el servidor. Con 4 tabs y un
-> intervalo de 5 s son ~8 clientes nuevos cada 5 s, lanzados por el propio servidor, hasta que se
-> queda sin descriptores:
+> **No hay atajos de "sesión anterior/siguiente" ni "ir a la sesión N", ni barra de sesiones.**
+> Los tres intentos chocan con el mismo muro: para hacer cualquiera de ellos hay que ejecutar un
+> comando, y **las dos formas que Zellij ofrece para eso tienen fuga de descriptores**.
+>
+> 1. **Acción `Run` desde un keybind** (para "sesión siguiente" / "ir a la N"). Abre un pane
+>    flotante que corre el script y debería cerrarse con `close_on_exit true`. En la práctica el
+>    float **se queda en blanco y no se cierra**: cada pulsación deja un pane vivo con su pty y su
+>    conexión al servidor.
+> 2. **Command widget de zjstatus** (para la barra). Vive en `default_tab_template`, o sea una
+>    instancia **por tab**, y cada refresco lanza `zellij list-sessions` — un *cliente* que abre
+>    sockets contra el servidor, lanzado por el propio servidor.
+>
+> Ambas acaban igual:
 > `Thread 'server_listener' panicked … Os { code: 24, message: "Too many open files" }`.
-> Cualquier reintento tiene que evitar `zellij list-sessions` en un bucle temporal — leer los
-> sockets de sesión del disco, o refrescar por `zellij pipe` sólo cuando una sesión cambia.
+> Subir `ulimit -n` sólo retrasa el panic; no lo evita.
+>
+> El mecanismo (1) ya estaba en `Alt-[` / `Alt-]` desde antes. Como esas teclas casi nunca
+> llegaban a dispararse (ver abajo), la fuga estaba **dormida**; al rebindearlas a teclas que sí
+> funcionan (`Alt-,` / `Alt-.`) se despertó, y por eso se han retirado también.
+>
+> `scripts/session-list.sh`, `session-cycle.sh` y `session-goto.sh` **siguen en el repo pero sin
+> bindear**: la lógica es correcta y se pueden ejecutar a mano. Lo que falta es una forma de
+> lanzarlos que no deje un pane vivo detrás.
 
-**`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** No era un problema de la
-config: con "meta sends escape", `Alt+[` se transmite como `ESC [` — que **es** el introductor
-CSI — y `Alt+]` como `ESC ]`, el introductor **OSC**. Ninguna terminal puede distinguirlos de una
-secuencia de escape real; termwiz (el parser de entrada de Zellij) sólo desambigua cuando el búfer
-de entrada llega completo, así que degrada justo por SSH y con pulsaciones rápidas. Lo dice el
-propio mantenedor de Zellij al arreglarlo a medias en
-[wezterm#3009](https://github.com/wezterm/wezterm/pull/3009): _"this ambiguity of `ESC` + `[` vs.
-`Alt-[` is something we have to live with"_. No merece la pena reintentarlo.
+**`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** Con "meta sends escape",
+`Alt+[` se transmite como `ESC [` — que **es** el introductor CSI — y `Alt+]` como `ESC ]`, el
+introductor **OSC**. Ninguna terminal puede distinguirlos de una secuencia de escape real; termwiz
+(el parser de entrada de Zellij) sólo desambigua cuando el búfer llega completo, así que degrada
+justo por SSH y con pulsaciones rápidas. Lo dice el propio mantenedor de Zellij al arreglarlo a
+medias en [wezterm#3009](https://github.com/wezterm/wezterm/pull/3009): _"this ambiguity of `ESC` +
+`[` vs. `Alt-[` is something we have to live with"_.
 
 ### Scrollback
 
