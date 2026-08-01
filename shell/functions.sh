@@ -23,6 +23,10 @@ zj() {
 # layout `dev`. Config por-host: `export ZJ_AGENT=<cmd>` o `echo <cmd> > ~/.config/zellij/agent.local`.
 agent() { "$HOME/.config/zellij/scripts/agent.sh"; }
 
+# zjcopy — copia TODO el scrollback del pane actual al portapapeles. Atajo: Ctrl-a y (que
+# escribe este mismo comando en el pane; ver el comentario de scripts/scrollback-copy.sh).
+zjcopy() { "$HOME/.config/zellij/scripts/scrollback-copy.sh"; }
+
 # zjcwd — crea (o salta a) una sesión rooteada en el directorio ACTUAL, SIN anidar.
 # Dentro de Zellij usa zellij-switch (cambia de sesión vía plugin, sin nesting, que es lo
 # que `zellij -s` no puede hacer estando adjunto); fuera, el CLI normal.

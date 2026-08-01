@@ -1,10 +1,17 @@
 #!/bin/sh
 # session-cycle.sh <prev|next> — salta a la sesión ANTERIOR / SIGUIENTE sin anidar.
-# Lo invoca un keybind (Alt-[ / Alt-]) con la acción `Run` de Zellij.
+# Lo invoca un keybind (Alt-, / Alt-.) con la acción `Run` de Zellij.
 #
-# Zellij no tiene una acción nativa de "sesión siguiente/anterior", así que aquí
-# calculamos el destino a partir de `zellij list-sessions` y la sesión actual, y
-# cambiamos vía el plugin zellij-switch (mismo mecanismo, sin anidar, que usa zjcwd).
+# Zellij no tiene una acción nativa de "sesión siguiente/anterior", así que aquí calculamos
+# el destino a partir de session-list.sh y la sesión actual, y cambiamos vía el plugin
+# zellij-switch (mismo mecanismo, sin anidar, que usan zjcwd y session-goto.sh).
+#
+# El orden lo define session-list.sh, el mismo que numera la barra, así que "siguiente" es
+# literalmente el número siguiente al que ves pintado.
+#
+# Antes iba en Alt-[ / Alt-]: esas teclas se transmiten como ESC+[ y ESC+], que SON los
+# introductores CSI y OSC, así que ninguna terminal puede distinguirlas de una secuencia de
+# escape real y fallaban de forma intermitente. Alt-, / Alt-. no tienen ese problema.
 
 dir="${1:-next}"
 [ "$dir" = prev ] || dir=next   # normaliza cualquier valor que no sea "prev" → "next"
@@ -14,9 +21,7 @@ dir="${1:-next}"
 cur="${ZELLIJ_SESSION_NAME:-}"
 [ -n "$cur" ] || cur=$(zellij list-sessions --no-formatting 2>/dev/null | grep '(current)' | awk '{print $1}')
 
-# nombres de sesiones VIVAS (primer token de cada línea), sin las EXITED, ordenados
-# alfabéticamente → orden de ciclo estable y predecible.
-sessions=$(zellij list-sessions --no-formatting 2>/dev/null | grep -v 'EXITED' | awk 'NF{print $1}' | sort -u)
+sessions=$(sh "$(dirname "$0")/session-list.sh")
 [ -n "$sessions" ] || exit 0
 
 # recorre la lista en orden buscando el vecino de `cur`, con wrap-around (POSIX sh).

@@ -51,6 +51,13 @@ default_mode "locked"
 keybinds {
     unbind "Ctrl g"                         // liberar el toggle por defecto
 
+    // Alt-[ / Alt-] quedan MUERTAS a propósito (ver la nota larga en `shared`): son
+    // ambiguas con los introductores CSI/OSC. Sin este unbind volverían los
+    // PreviousSwapLayout / NextSwapLayout del default, que dispararían cambios de layout
+    // espurios cada vez que la terminal malinterprete una secuencia de escape.
+    unbind "Alt ["
+    unbind "Alt ]"
+
     // Globales (todos los modos): lanzadores de plugin.
     shared {
         // which-key browser: cheatsheet buscable de TODOS los mappings, on-demand
@@ -74,18 +81,33 @@ keybinds {
         // siguiente/anterior": un script calcula el destino y cambia vía zellij-switch.
         // El trabajo se desliga con `nohup … &` para que el pane que lo hospeda (la acción
         // Run abre uno siempre) se cierre al instante y el float no llegue a verse.
-        // Nota: pisa el Alt-[ / Alt-] heredado (swap-layout anterior/siguiente).
-        bind "Alt [" {
+        //
+        // Antes esto estaba en Alt-[ / Alt-] y fallaba de forma intermitente. NO era la
+        // config: con "meta sends escape", Alt-[ se transmite como ESC+[ — que ES el
+        // introductor CSI — y Alt-] como ESC+], que ES el introductor OSC. Ninguna terminal
+        // puede distinguirlos de una secuencia de escape real (termwiz, el parser de
+        // entrada de Zellij, sólo acierta cuando el búfer llega completo → degrada por SSH
+        // y con repeticiones rápidas). Alt-, / Alt-. no son introductores de nada.
+        bind "Alt ," {
             Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-cycle.sh prev >/dev/null 2>&1 &" {
                 floating true
                 close_on_exit true
             }
         }
-        bind "Alt ]" {
+        bind "Alt ." {
             Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-cycle.sh next >/dev/null 2>&1 &" {
                 floating true
                 close_on_exit true
             }
+        }
+        // Abrir el scrollback del pane en nvim, desde CUALQUIER modo (antes: Ctrl-a s e).
+        // Zellij lo abre YA POSICIONADO al final del output del último comando: pasa
+        // `+<línea del cursor>` en el argv del editor. Desde ahí, visual mode de vim.
+        // SwitchToMode "Locked" es imprescindible: EditScrollback NO cambia de modo por sí
+        // solo, y el default heredado deja Zellij en Normal interceptando Ctrl-p/n/t/s/o.
+        bind "Alt e" {
+            EditScrollback
+            SwitchToMode "Locked"
         }
         // Command palette (estilo VSCode): fuzzy sobre acciones de Zellij
         bind "Alt Space" {
@@ -129,9 +151,103 @@ keybinds {
         bind "s" { SwitchToMode "Scroll"; }        // scroll / buscar
         bind "o" { SwitchToMode "Session"; }       // sesiones (o → detach)
         bind "m" { SwitchToMode "Move"; }          // mover paneles
+
+        // Ctrl-a y → copiar TODO el scrollback del pane al portapapeles.
+        // Escribe ` zjcopy` + Enter en el pane en vez de lanzar la acción `Run`: `Run` abre
+        // un pane nuevo que roba el foco y `dump-screen` volcaría ESE pane; y la acción
+        // `DumpScreen` sólo da el viewport (lleva include_scrollback:false hardcodeado).
+        // El espacio inicial evita que el comando entre en el historial (HIST_IGNORE_SPACE).
+        // Va en Normal (tras Ctrl-a) y no en `shared` a propósito: así nunca se dispara sola
+        // sobre un pane con una TUI (nvim, codex), donde sólo tecleraría texto.
+        bind "y" {
+            WriteChars " zjcopy"
+            Write 13
+            SwitchToMode "Locked"
+        }
+
+        // Ctrl-a <dígito> → ir a la sesión N de la barra (la lista numerada de la derecha).
+        // Los dígitos van aquí y no en `locked` porque Alt-1…9 ya son los tabs; el índice es
+        // el que pinta scripts/session-bar.sh (ambos leen scripts/session-list.sh). Un dígito
+        // sin sesión detrás no hace nada.
+        // Mismo truco `nohup … &` + close_on_exit que Alt-, / Alt-. para que el pane que la
+        // acción Run abre siempre se cierre al instante y no llegue a verse.
+        bind "1" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 1 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "2" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 2 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "3" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 3 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "4" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 4 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "5" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 5 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "6" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 6 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "7" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 7 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "8" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 8 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "9" {
+            Run "sh" "-c" "nohup sh __HOME__/.config/zellij/scripts/session-goto.sh 9 >/dev/null 2>&1 &" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
     }
     // Los Ctrl-<letra> por defecto (Ctrl-p/t/n/s/o/h) siguen funcionando
     // también; el estilo tmux de letra sola es un alias adicional.
+
+    // Editor de scrollback: al abrirlo, pasar a Locked para que nvim reciba TODAS las
+    // teclas. EditScrollback no toca el modo por sí solo; el default de Zellij lo compensa
+    // con `bind "e" { EditScrollback; SwitchToMode "Normal"; }`, y en Normal Zellij se queda
+    // con Ctrl-p/n/t/s/o/h → el editor se siente muerto. Mismo arreglo que el de `session`.
+    scroll {
+        bind "e" {
+            EditScrollback
+            SwitchToMode "Locked"
+        }
+    }
 
     // Session-manager: al abrirlo, pasar a Locked para poder escribir/navegar
     // en el float (el default lo deja en Normal y las teclas se interceptan).
