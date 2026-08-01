@@ -28,12 +28,19 @@ found_dir=""
 sessions=""
 
 for base in "${ZELLIJ_SOCK_DIR:-}" "${TMPDIR:-/tmp}/zellij-$uid" "/tmp/zellij-$uid" "${XDG_RUNTIME_DIR:-}/zellij" "/run/user/$uid/zellij"; do
-  [ -n "$base" ] && [ -d "$base" ] || continue
+  [ -n "$base" ] || continue
+  if [ ! -d "$base" ]; then
+    [ "$verbose" = 1 ] && printf 'session-bar:   %-45s no existe\n' "$base" >&2
+    continue
+  fi
   names=$(
     for f in "$base"/* "$base"/*/*; do
       [ -S "$f" ] && printf '%s\n' "${f##*/}"
     done 2>/dev/null | sort -u
   )
+  if [ "$verbose" = 1 ]; then
+    printf 'session-bar:   %-45s existe, %s socket(s)\n' "$base" "$(printf '%s' "$names" | grep -c . || true)" >&2
+  fi
   if [ -n "$names" ]; then
     found_dir="$base"
     sessions="$names"
@@ -42,9 +49,13 @@ for base in "${ZELLIJ_SOCK_DIR:-}" "${TMPDIR:-/tmp}/zellij-$uid" "/tmp/zellij-$u
 done
 
 if [ "$verbose" = 1 ]; then
-  printf 'session-bar: directorio = %s\n' "${found_dir:-(ninguno)}" >&2
-  printf 'session-bar: sesiones   = %s\n' "$(printf '%s' "$sessions" | tr '\n' ' ')" >&2
-  printf 'session-bar: actual     = %s\n' "${ZELLIJ_SESSION_NAME:-(no llega la env var)}" >&2
+  if [ -n "$found_dir" ]; then
+    printf 'session-bar: sesiones = %s\n' "$(printf '%s' "$sessions" | tr '\n' ' ')" >&2
+  else
+    printf 'session-bar: sin sockets. Si NO hay ninguna sesión de Zellij viva, es lo correcto.\n' >&2
+    printf 'session-bar: con una sesión abierta, busca dónde están:  find "${TMPDIR:-/tmp}" -maxdepth 4 -type s -name "*" 2>/dev/null | grep -i zellij\n' >&2
+  fi
+  printf 'session-bar: actual   = %s\n' "${ZELLIJ_SESSION_NAME:-(no llega la env var; fuera de Zellij es normal)}" >&2
 fi
 
 [ -n "$sessions" ] || exit 0
