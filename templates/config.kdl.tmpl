@@ -76,6 +76,31 @@ keybinds {
             }
             SwitchToMode "Locked"
         }
+        // Sesión ANTERIOR / SIGUIENTE, ciclando las vivas con wrap-around. Zellij no tiene
+        // acción nativa: un script calcula el destino y cambia vía zellij-switch.
+        //
+        // `</dev/null` NO es decorativo. Antes esto iba como `nohup … >/dev/null 2>&1 &`,
+        // para que el pane que abre `Run` se cerrase al instante — y lo que pasaba era lo
+        // contrario: el float se quedaba EN BLANCO y no se cerraba nunca. El proceso en
+        // segundo plano heredaba stdin del pty, así que el pty jamás daba EOF y Zellij no
+        // daba el comando por terminado. Ahora corre en primer plano y sin stdin: el pane
+        // se cierra en cuanto el script acaba. Puede verse un parpadeo; es aceptable.
+        //
+        // Antes estaban en Alt-[ / Alt-]: esas teclas se transmiten como ESC+[ y ESC+], que
+        // SON los introductores CSI y OSC, así que ninguna terminal las distingue de una
+        // secuencia de escape real. Alt-, / Alt-. no tienen ese problema.
+        bind "Alt ," {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-cycle.sh prev </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+        }
+        bind "Alt ." {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-cycle.sh next </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+        }
         // Command palette (estilo VSCode): fuzzy sobre acciones de Zellij
         bind "Alt Space" {
             LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-palette.wasm" {
@@ -119,6 +144,74 @@ keybinds {
         bind "o" { SwitchToMode "Session"; }       // sesiones (o → detach)
         bind "m" { SwitchToMode "Move"; }          // mover paneles
 
+        // Ctrl-a <dígito> → ir a la sesión N de la barra. Los dígitos van aquí y no en
+        // `locked` porque Alt-1…9 ya son los tabs. El índice es el que pinta
+        // scripts/session-bar.sh: ambos leen el mismo orden. Un dígito sin sesión detrás no
+        // hace nada. Mismo `</dev/null` que Alt-, / Alt-. (ver la nota de arriba).
+        bind "1" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 1 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "2" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 2 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "3" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 3 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "4" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 4 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "5" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 5 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "6" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 6 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "7" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 7 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "8" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 8 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+        bind "9" {
+            Run "sh" "-c" "sh __HOME__/.config/zellij/scripts/session-goto.sh 9 </dev/null >/dev/null 2>&1" {
+                floating true
+                close_on_exit true
+            }
+            SwitchToMode "Locked"
+        }
+
         // Ctrl-a y → copiar TODO el scrollback del pane al portapapeles.
         // Escribe ` zjcopy` + Enter en el pane en vez de lanzar la acción `Run`: `Run` abre
         // un pane nuevo que roba el foco y `dump-screen` volcaría ESE pane; y la acción
@@ -132,17 +225,6 @@ keybinds {
             SwitchToMode "Locked"
         }
     }
-    // NOTA — no hay atajos de "sesión anterior/siguiente" ni "ir a la sesión N".
-    // Se intentaron con la acción `Run` (un pane flotante que corre un script y se cierra
-    // con close_on_exit). En la práctica el float se queda EN BLANCO y no se cierra: cada
-    // pulsación deja un pane vivo con su pty y su conexión al servidor → fuga de file
-    // descriptors hasta el panic "Too many open files" del server_listener.
-    // El mecanismo ya estaba en Alt-[ / Alt-]; como esas teclas casi nunca llegaban a
-    // dispararse (ambigüedad CSI/OSC), la fuga estaba dormida.
-    // scripts/session-{list,cycle,goto}.sh siguen en el repo pero SIN bindear: son correctos
-    // y se pueden ejecutar a mano; lo que falta es una forma de lanzarlos que no deje pane.
-    // Para cambiar de sesión: Alt-s (session-manager).
-
     // Los Ctrl-<letra> por defecto (Ctrl-p/t/n/s/o/h) siguen funcionando
     // también; el estilo tmux de letra sola es un alias adicional.
 

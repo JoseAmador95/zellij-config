@@ -66,11 +66,12 @@ Ctrl-a        despertar Zellij (→ Normal) · Ctrl-a Ctrl-a → Locked
 Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
 Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
-Alt-t         tab nuevo
+Alt-, Alt-.   sesión anterior/siguiente    Alt-t   tab nuevo
 ```
 
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
-Además, tras `Ctrl-a`, **`y`** copia todo el scrollback del pane al portapapeles.
+Además, tras `Ctrl-a`: **`1`…`9`** salta a la sesión N de la barra, y **`y`** copia todo el
+scrollback del pane al portapapeles.
 
 **Zellij es opt-in** (no auto-arranca). **Funciones de shell** (`shell/functions.sh`, sourced
 automáticamente por `bootstrap.sh`):
@@ -205,9 +206,19 @@ Añádelas a mano en cada máquina:
 `format_right` lista las **sesiones vivas numeradas**, con la actual resaltada. Con una sola
 sesión no imprime nada, para no duplicar la pastilla `📁 sesión` de la izquierda.
 
-**Cambiar de sesión: `Alt-s`** (session-manager), o **clic sobre la lista**, que abre el mismo
-selector. zjstatus admite una sola `clickaction` por widget, así que el clic no puede saltar a la
-sesión concreta que pulsaste.
+**Cambiar de sesión:**
+
+- `Alt-,` / `Alt-.` → anterior / siguiente, con wrap-around (`scripts/session-cycle.sh`).
+- `Ctrl-a` + `1`…`9` → ir a la sesión N de la barra (`scripts/session-goto.sh`).
+- `Alt-s` → session-manager.
+- **Clic sobre la lista** → abre el session-manager, no salta a la sesión que pulsaste: zjstatus
+  admite una sola `clickaction` por widget, y la lista entera es un widget.
+
+Ambos atajos usan la acción `Run`, que abre un pane flotante para correr el script. El
+`</dev/null` del comando **no es decorativo**: antes iba como `nohup … >/dev/null 2>&1 &` para que
+el pane se cerrase al instante, y hacía justo lo contrario — el float se quedaba en blanco y no se
+cerraba nunca, porque el proceso en segundo plano heredaba stdin del pty y el pty nunca daba EOF.
+En primer plano y sin stdin, el pane se cierra al acabar el script. Puede verse un parpadeo.
 
 `scripts/session-bar.sh` **lee el directorio de sockets de Zellij**, no llama a
 `zellij list-sessions`. Es deliberado y es la lección de un fallo: el widget vive en
@@ -221,14 +232,6 @@ Para depurar qué ve el script:
 ```sh
 sh ~/.config/zellij/scripts/session-bar.sh -v
 ```
-
-> **No hay atajos de "sesión anterior/siguiente" ni "ir a la sesión N".** Se hicieron con la
-> acción `Run`, que abre un pane flotante para correr el script y debería cerrarse con
-> `close_on_exit true`. En la práctica el float **se queda en blanco y no se cierra**, y cada
-> pulsación deja un pane vivo con su pty. El mecanismo venía de `Alt-[` / `Alt-]`; como esas
-> teclas casi nunca se disparaban, el problema estaba dormido.
-> `scripts/session-list.sh`, `session-cycle.sh` y `session-goto.sh` siguen en el repo **sin
-> bindear**: la lógica es correcta, falta una forma de lanzarlos que no deje un pane detrás.
 
 **`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** Con "meta sends escape",
 `Alt+[` se transmite como `ESC [` — que **es** el introductor CSI — y `Alt+]` como `ESC ]`, el
