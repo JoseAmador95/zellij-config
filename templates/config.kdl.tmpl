@@ -158,7 +158,7 @@ keybinds {
 
         // Ctrl-a <dígito> → ir a la sesión N de la barra (la lista numerada de la derecha).
         // Los dígitos van aquí y no en `locked` porque Alt-1…9 ya son los tabs; el índice es
-        // el que pinta scripts/session-bar.sh (ambos leen scripts/session-list.sh). Un dígito
+        // de scripts/session-list.sh, el mismo que usa el ciclo Alt-, / Alt-. Un dígito
         // sin sesión detrás no hace nada.
         // Mismo truco `nohup … &` + close_on_exit que Alt-, / Alt-. para que el pane que la
         // acción Run abre siempre se cierre al instante y no llegue a verse.

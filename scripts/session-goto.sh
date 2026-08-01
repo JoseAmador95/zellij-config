@@ -2,7 +2,7 @@
 # session-goto.sh <N> — salta a la N-ésima sesión de la barra. Lo invoca Ctrl-a <dígito>
 # (bloque `normal` de config.kdl) con la acción `Run` de Zellij.
 #
-# El índice es exactamente el que pinta session-bar.sh: ambos leen session-list.sh.
+# El índice sale de session-list.sh, el mismo orden que usa session-cycle.sh.
 #
 # El cambio de sesión va por el plugin zellij-switch, el mismo mecanismo que ya usan zjcwd,
 # zjssh y session-cycle.sh. Zellij 0.44 tiene `zellij action switch-session`, pero ese lo
