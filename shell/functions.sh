@@ -5,6 +5,34 @@
 # MODELO OPT-IN: Zellij NO auto-arranca. Entras a mano con `zj` (o `zjcwd`). Así, con
 # SSH y Zellij en ambos hosts, la cadena tiene UN solo Zellij y `ssh` no anida.
 
+# ── Límite de file descriptors ───────────────────────────────────────────────
+# macOS trae un soft limit de 256 (`launchctl limit maxfiles`), que heredan Ghostty y todo
+# shell que abras dentro. El servidor de Zellij hereda a su vez el del shell que lo arranca,
+# y 256 NO da para una sesión con varios tabs: cada pane es un pty y cada tab una instancia
+# de zjstatus. Al agotarlos, el servidor entero se cae con:
+#
+#   Thread 'server_listener' panicked … Os { code: 24, "Too many open files" }
+#
+# No es una fuga: es un techo demasiado bajo. El hard limit es `unlimited`, así que subir el
+# soft no necesita sudo ni tocar launchd. Sólo SUBE (nunca baja) y se topa con el hard limit
+# del sistema, que en Linux sí puede ser finito.
+#
+# OJO: sólo afecta a servidores NUEVOS. Una sesión ya viva conserva el límite con el que
+# nació; para que aplique hay que cerrarla y volver a crearla.
+_zj_raise_nofile() {
+  local want=8192 cur hard
+  cur=$(ulimit -Sn 2>/dev/null) || return 0
+  [ "$cur" = unlimited ] && return 0
+  [ "$cur" -ge "$want" ] 2>/dev/null && return 0
+  hard=$(ulimit -Hn 2>/dev/null)
+  if [ -n "$hard" ] && [ "$hard" != unlimited ] && [ "$hard" -lt "$want" ] 2>/dev/null; then
+    want="$hard"
+  fi
+  ulimit -Sn "$want" 2>/dev/null || true
+}
+_zj_raise_nofile
+unset -f _zj_raise_nofile 2>/dev/null
+
 # zj — abrir (adjuntar o crear) la sesión "main" con nuestro layout. Comando principal.
 # `zj` → sesión "main"; `zj foo` → sesión "foo". Sin `&& exit`: al salir vuelves al shell.
 # "main" se crea SIN serialización (--session-serialization false): evita resucitar paneles

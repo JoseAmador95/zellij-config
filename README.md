@@ -132,6 +132,30 @@ abre un shell local. El remoto **no** corre Zellij (aquí sólo el cliente) → 
   sesión (`zellij delete-session ssh_<host>`) o `./bootstrap.sh --clean`. Los panes con `command`
   del layout `ssh` pueden pedir confirmación al resucitar una sesión serializada (como el layout `dev`).
 
+## `Too many open files` (macOS)
+
+Si el servidor se cae con
+
+```
+Thread 'server_listener' panicked … Os { code: 24, message: "Too many open files" }
+```
+
+**no es una fuga: es el soft limit de macOS.** `launchctl limit maxfiles` trae **256** de fábrica,
+y lo heredan Ghostty, tu shell y —a través del shell que la arranca— la sesión de Zellij. 256
+descriptores no dan para varios tabs: cada pane es un pty y cada tab una instancia de zjstatus.
+Se nota porque `ulimit -n 8192 && zj` **retrasa** el panic en vez de evitarlo.
+
+`shell/functions.sh` sube el soft limit a 8192 al sourcearse (sólo sube, nunca baja, y se topa
+con el hard limit del sistema). El hard limit en macOS es `unlimited`, así que no hace falta
+`sudo` ni tocar launchd. Comprueba en una terminal **nueva**:
+
+```sh
+ulimit -n        # debe dar 8192, no 256
+```
+
+Sólo afecta a servidores **nuevos**: una sesión ya viva conserva el límite con el que nació.
+Para que aplique, ciérrala y vuelve a crearla.
+
 ## Dependencias
 
 `zellij` (0.44+), `curl`, `sed`, `cksum`, `hostname`, y `zsh` o `bash` (el shell del host). En macOS via Homebrew;
@@ -189,7 +213,7 @@ Añádelas a mano en cada máquina:
 >    float **se queda en blanco y no se cierra**: cada pulsación deja un pane vivo con su pty y su
 >    conexión al servidor.
 > 2. **Command widget de zjstatus** (para la barra). Vive en `default_tab_template`, o sea una
->    instancia **por tab**, y cada refresco lanza `zellij list-sessions` — un *cliente* que abre
+>    instancia **por tab**, y cada refresco lanza `zellij list-sessions` — un _cliente_ que abre
 >    sockets contra el servidor, lanzado por el propio servidor.
 >
 > Ambas acaban igual:
