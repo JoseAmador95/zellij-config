@@ -100,15 +100,6 @@ keybinds {
                 close_on_exit true
             }
         }
-        // Abrir el scrollback del pane en nvim, desde CUALQUIER modo (antes: Ctrl-a s e).
-        // Zellij lo abre YA POSICIONADO al final del output del último comando: pasa
-        // `+<línea del cursor>` en el argv del editor. Desde ahí, visual mode de vim.
-        // SwitchToMode "Locked" es imprescindible: EditScrollback NO cambia de modo por sí
-        // solo, y el default heredado deja Zellij en Normal interceptando Ctrl-p/n/t/s/o.
-        bind "Alt e" {
-            EditScrollback
-            SwitchToMode "Locked"
-        }
         // Command palette (estilo VSCode): fuzzy sobre acciones de Zellij
         bind "Alt Space" {
             LaunchOrFocusPlugin "file:__HOME__/.config/zellij/plugins/zellij-palette.wasm" {

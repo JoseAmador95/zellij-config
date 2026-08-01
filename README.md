@@ -67,12 +67,11 @@ Alt-hjkl      foco entre panes/tabs        Alt-n   panel nuevo
 Alt-1…9       ir al tab N                  Alt-s   session-manager (sesiones)
 Alt-space     command palette              Alt-/   which-key (cheatsheet)
 Alt-, Alt-.   sesión anterior/siguiente    Alt-t   tab nuevo
-Alt-e         scrollback del pane en nvim
 ```
 
 En Normal, letras sueltas abren submodos (tmux): `p`ane `t`ab `r`esize `s`croll `o` session `m`ove.
-Además, tras `Ctrl-a`: **`1`…`9`** salta a la sesión N de la barra, y **`y`** copia todo el
-scrollback del pane al portapapeles.
+Además, tras `Ctrl-a`: **`1`…`9`** salta a la sesión N (orden de `scripts/session-list.sh`), y
+**`y`** copia todo el scrollback del pane al portapapeles.
 
 **Zellij es opt-in** (no auto-arranca). **Funciones de shell** (`shell/functions.sh`, sourced
 automáticamente por `bootstrap.sh`):
@@ -178,21 +177,24 @@ Añádelas a mano en cada máquina:
   de **sesión** usa un estilo fijo (morado + 📁): zjstatus no puede pasar `{session}` a un
   command widget, así que su color no puede ser por-hash como el del host.
 
-### Barra de sesiones (derecha)
+### Sesiones
 
-`format_right` lista las **sesiones vivas numeradas**, con la actual resaltada, vía
-`scripts/session-bar.sh` (mismo patrón de command widget que el hostname). Con una sola sesión no
-imprime nada, para no duplicar la pastilla `📁 sesión` de la izquierda.
-
-El **orden lo fija `scripts/session-list.sh`** (alfabético), y es el mismo que usan el salto por
-índice y el ciclo — por eso el número que ves es el que funciona:
+El **orden canónico lo fija `scripts/session-list.sh`** (alfabético), y es el que usan tanto el
+salto por índice como el ciclo, así que ambos coinciden:
 
 - `Ctrl-a` + `1`…`9` → ir a esa sesión (`scripts/session-goto.sh`).
 - `Alt-,` / `Alt-.` → sesión anterior / siguiente con wrap-around (`scripts/session-cycle.sh`).
 - `Alt-s` → session-manager, que se navega y elige con el ratón.
-- **Clic sobre la lista** → abre el session-manager. zjstatus sí captura clics en los command
-  widgets (`command_sessions_clickaction`), pero admite **una sola** acción por widget, así que no
-  puede saltar a la sesión concreta que clicaste.
+
+> **Por qué NO hay una barra de sesiones permanente.** Se intentó con un command widget de
+> zjstatus (`format_right`) y **tumba el servidor de Zellij**: el widget vive en
+> `default_tab_template`, o sea una instancia de zjstatus **por tab**, y cada refresco lanza
+> `zellij list-sessions`, que es un _cliente_ que abre sockets contra el servidor. Con 4 tabs y un
+> intervalo de 5 s son ~8 clientes nuevos cada 5 s, lanzados por el propio servidor, hasta que se
+> queda sin descriptores:
+> `Thread 'server_listener' panicked … Os { code: 24, message: "Too many open files" }`.
+> Cualquier reintento tiene que evitar `zellij list-sessions` en un bucle temporal — leer los
+> sockets de sesión del disco, o refrescar por `zellij pipe` sólo cuando una sesión cambia.
 
 **`Alt-[` / `Alt-]` quedaron retiradas (y explícitamente `unbind`).** No era un problema de la
 config: con "meta sends escape", `Alt+[` se transmite como `ESC [` — que **es** el introductor
@@ -212,11 +214,12 @@ propio mantenedor de Zellij al arreglarlo a medias en
   un pane nuevo que roba el foco (y `dump-screen` volcaría ese), y la acción `DumpScreen` sólo da
   el viewport porque lleva `include_scrollback: false` hardcodeado. Por eso vive en Normal (tras
   `Ctrl-a`) y no en `shared`: sobre un pane con una TUI sólo tecleraría texto.
-- **`Alt-e`** abre el scrollback en nvim desde cualquier modo (antes: `Ctrl-a` `s` `e`). Zellij lo
-  abre **ya posicionado al final del último comando** — pasa `+<línea del cursor>` en el argv del
-  editor — así que desde ahí seleccionas con vim-motions normales. Zellij deja el volcado en
-  `$TMPDIR/<uuid>.dump` y **no lo borra**, así que esos archivos se acumulan en `/tmp`.
-- Tanto `Alt-e` como la `e` del modo Scroll dejan Zellij en **Locked**, no en Normal.
-  `EditScrollback` no cambia de modo por sí solo y el default de Zellij lo pone en Normal, donde
-  Zellij se queda con `Ctrl-p/n/t/s/o/h` y el editor se siente muerto.
+- La `e` del modo Scroll (`Ctrl-a` `s` `e`) abre el scrollback en `$scrollback_editor` y ahora deja
+  Zellij en **Locked**, no en Normal. `EditScrollback` no cambia de modo por sí solo y el default de
+  Zellij lo pone en Normal, donde Zellij se queda con `Ctrl-p/n/t/s/o/h` y el editor se siente
+  muerto. Zellij deja el volcado en `$TMPDIR/<uuid>.dump` y **no lo borra**: se acumulan en `/tmp`.
+- **Seleccionar el output de UN comando no tiene solución aquí.** Requiere shell integration
+  (marcadores OSC 133 en el prompt) y Zellij no la soporta: su búfer guarda caracteres
+  renderizados, no semántica, así que los marcadores se pierden en el volcado. Cualquier intento
+  acaba siendo una heurística de regex sobre el prompt. La config de nvim **no** se toca para esto.
 - `config.kdl.verbose.bak` / `config.kdl.bak` son respaldos locales (ignorados por git).

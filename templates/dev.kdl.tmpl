@@ -13,19 +13,8 @@ layout {
         pane size=1 borderless=true {
             plugin location="file:__HOME__/.config/zellij/plugins/zjstatus.wasm" {
                 format_left  "{mode} {command_host} #[bg=#8E24AA,fg=#FFFFFF,bold]  📁 {session}  #[default] {tabs}"
-                format_right "{command_sessions}"
+                format_right ""
                 format_space ""
-
-                // sesiones — lista NUMERADA de las sesiones vivas, con la actual resaltada.
-                // El número es el que acepta Ctrl-a <dígito> (scripts/session-goto.sh).
-                // Con una sola sesión el script no imprime nada y la derecha queda limpia.
-                // El clic sobre la lista abre el session-manager: zjstatus sólo admite UNA
-                // clickaction por widget, así que no puede saltar a la sesión clicada.
-                command_sessions_command     "sh __HOME__/.config/zellij/scripts/session-bar.sh"
-                command_sessions_format      "{stdout}"
-                command_sessions_interval    "5"
-                command_sessions_rendermode  "dynamic"
-                command_sessions_clickaction "zellij action launch-or-focus-plugin --floating --move-to-focused-tab zellij:session-manager"
 
                 // hostname — pastilla con color/emoji determinista por hostname (hash)
                 command_host_command    "sh __HOME__/.config/zellij/scripts/hostname-color.sh"
