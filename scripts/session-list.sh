@@ -3,8 +3,7 @@
 #
 # Es la FUENTE ÚNICA del orden: el salto por índice
 # (session-goto.sh) y el ciclo anterior/siguiente (session-cycle.sh) leen de aquí. Por eso
-# "la sesión 2" es la misma en los tres sitios, y Alt-. avanza justo al número siguiente de
-# los que ves pintados en la barra.
+# "la sesión 2" es la misma en ambos, y Alt-. avanza justo al índice siguiente.
 #
 # Orden alfabético (sort -u): `zellij list-sessions` no garantiza ninguno, y un orden estable
 # es lo que hace predecible el ciclo y reutilizable el índice.
